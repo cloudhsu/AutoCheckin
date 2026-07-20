@@ -10,22 +10,36 @@ namespace AutoCheckIn
     {
         private readonly IUofClient m_uofClient;
         private readonly IAutoCheckScheduler m_dailyCheck;
+        private readonly ICredentialStore m_credentialStore;
+        private readonly IStartupTaskService m_startupTaskService;
         private readonly CancellationTokenSource m_formCancellation = new CancellationTokenSource();
         private readonly System.Windows.Forms.Timer m_timer;
         private readonly NotifyIcon m_trayIcon;
         private readonly ContextMenuStrip m_trayMenu;
 
         public MainForm()
-            : this(new CrackClient(), new DailyCheck(new CrackClient()), UiTheme.Amber)
+            : this(
+                new CredentialSavingUofClient(new CrackClient(), new DpapiCredentialStore()),
+                new DailyCheck(new CredentialSavingUofClient(new CrackClient(), new DpapiCredentialStore())),
+                new DpapiCredentialStore(),
+                new WindowsStartupTaskService(),
+                UiTheme.Amber)
         {
             // Required by the WinForms designer. Program.cs is the runtime
             // composition root and uses the injectable constructor below.
         }
 
-        internal MainForm(IUofClient uofClient, IAutoCheckScheduler dailyCheck, UiTheme theme)
+        internal MainForm(
+            IUofClient uofClient,
+            IAutoCheckScheduler dailyCheck,
+            ICredentialStore credentialStore,
+            IStartupTaskService startupTaskService,
+            UiTheme theme)
         {
             m_uofClient = uofClient ?? throw new ArgumentNullException(nameof(uofClient));
             m_dailyCheck = dailyCheck ?? throw new ArgumentNullException(nameof(dailyCheck));
+            m_credentialStore = credentialStore ?? throw new ArgumentNullException(nameof(credentialStore));
+            m_startupTaskService = startupTaskService ?? throw new ArgumentNullException(nameof(startupTaskService));
             Icon = Properties.Resources.cloudbox;
             ShowIcon = true;
             ApplyTheme(theme ?? UiTheme.Amber);
@@ -38,6 +52,11 @@ namespace AutoCheckIn
             wedCheckBox.CheckedChanged += cbxWorkingDay_CheckedChanged;
             thuCheckBox.CheckedChanged += cbxWorkingDay_CheckedChanged;
             friCheckBox.CheckedChanged += cbxWorkingDay_CheckedChanged;
+            createStartupButton.Click += CreateStartupButton_Click;
+            deleteStartupButton.Click += DeleteStartupButton_Click;
+            Shown += MainForm_Shown;
+
+            LoadSavedCredentials();
 
             m_timer = new System.Windows.Forms.Timer { Interval = 100 };
             m_timer.Tick += Timer_Tick;
@@ -68,15 +87,73 @@ namespace AutoCheckIn
             StylePanel(accountPanel, theme);
             StylePanel(manualPanel, theme);
             StylePanel(schedulePanel, theme);
+            StylePanel(startupPanel, theme);
             statusPanel.BackColor = theme.Window;
             StyleTextBox(idTextBox, theme);
             StyleTextBox(passwordTextBox, theme);
             StylePrimaryButton(checkInButton, theme);
             StyleSecondaryButton(checkOutButton, theme);
             StylePrimaryButton(autoCheckButton, theme);
+            StylePrimaryButton(createStartupButton, theme);
+            StyleSecondaryButton(deleteStartupButton, theme);
             statusLabel.ForeColor = theme.MutedText;
             checkInTimeLabel.ForeColor = theme.Accent;
             checkOutTimeLabel.ForeColor = theme.Accent;
+            startupStatusLabel.ForeColor = theme.MutedText;
+        }
+
+        private void LoadSavedCredentials()
+        {
+            var credentials = m_credentialStore.Load();
+            if (credentials == null)
+            {
+                return;
+            }
+
+            idTextBox.Text = credentials.LoginId;
+            passwordTextBox.Text = credentials.Password;
+            statusLabel.Text = "Saved credentials loaded securely.";
+        }
+
+        private async void MainForm_Shown(object sender, EventArgs e)
+        {
+            await RefreshStartupTaskStatusAsync();
+        }
+
+        private async void CreateStartupButton_Click(object sender, EventArgs e)
+        {
+            SetStartupButtonsEnabled(false);
+            startupStatusLabel.Text = "Creating Windows startup task...";
+            var result = await m_startupTaskService.CreateAsync();
+            ShowStartupResult(result);
+        }
+
+        private async void DeleteStartupButton_Click(object sender, EventArgs e)
+        {
+            SetStartupButtonsEnabled(false);
+            startupStatusLabel.Text = "Removing Windows startup task...";
+            var result = await m_startupTaskService.DeleteAsync();
+            ShowStartupResult(result);
+        }
+
+        private async Task RefreshStartupTaskStatusAsync()
+        {
+            SetStartupButtonsEnabled(false);
+            var result = await m_startupTaskService.GetStatusAsync();
+            ShowStartupResult(result);
+        }
+
+        private void ShowStartupResult(TaskScheduleResult result)
+        {
+            startupStatusLabel.Text = result.Message;
+            createStartupButton.Enabled = !result.Exists;
+            deleteStartupButton.Enabled = result.Exists;
+        }
+
+        private void SetStartupButtonsEnabled(bool enabled)
+        {
+            createStartupButton.Enabled = enabled;
+            deleteStartupButton.Enabled = enabled;
         }
 
         private static void StylePanel(Panel panel, UiTheme theme)

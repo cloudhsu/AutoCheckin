@@ -48,15 +48,21 @@
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CheckAction.cs" />
     <Compile Include="CheckResult.cs" />
+    <Compile Include="Credentials.cs" />
+    <Compile Include="CredentialSavingUofClient.cs" />
     <Compile Include="CrackClient.cs" />
     <Compile Include="DailyCheck.cs" />
+    <Compile Include="DpapiCredentialStore.cs" />
     <Compile Include="IAutoCheckScheduler.cs" />
+    <Compile Include="ICredentialStore.cs" />
+    <Compile Include="IStartupTaskService.cs" />
     <Compile Include="IUofClient.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -86,8 +92,10 @@
       <DependentUpon>newForm4.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="TaskScheduleResult.cs" />
     <Compile Include="UiTheme.cs" />
     <Compile Include="UiDefaults.cs" />
+    <Compile Include="WindowsStartupTaskService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

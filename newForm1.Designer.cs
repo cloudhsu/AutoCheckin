@@ -30,6 +30,11 @@ namespace AutoCheckIn
         protected System.Windows.Forms.Panel statusPanel;
         private System.Windows.Forms.Label statusDot;
         protected System.Windows.Forms.Label statusLabel;
+        protected System.Windows.Forms.Panel startupPanel;
+        private System.Windows.Forms.Label startupTitleLabel;
+        protected System.Windows.Forms.Label startupStatusLabel;
+        protected System.Windows.Forms.Button createStartupButton;
+        protected System.Windows.Forms.Button deleteStartupButton;
 
         protected override void Dispose(bool disposing)
         {
@@ -66,11 +71,17 @@ namespace AutoCheckIn
             this.statusPanel = new System.Windows.Forms.Panel();
             this.statusDot = new System.Windows.Forms.Label();
             this.statusLabel = new System.Windows.Forms.Label();
+            this.startupPanel = new System.Windows.Forms.Panel();
+            this.startupTitleLabel = new System.Windows.Forms.Label();
+            this.startupStatusLabel = new System.Windows.Forms.Label();
+            this.createStartupButton = new System.Windows.Forms.Button();
+            this.deleteStartupButton = new System.Windows.Forms.Button();
             this.headerPanel.SuspendLayout();
             this.accountPanel.SuspendLayout();
             this.manualPanel.SuspendLayout();
             this.schedulePanel.SuspendLayout();
             this.statusPanel.SuspendLayout();
+            this.startupPanel.SuspendLayout();
             this.SuspendLayout();
             // headerPanel
             this.headerPanel.BackColor = System.Drawing.Color.FromArgb(31, 45, 53);
@@ -221,11 +232,46 @@ namespace AutoCheckIn
             this.autoCheckButton.Size = new System.Drawing.Size(226, 66);
             this.autoCheckButton.Text = "START AUTO CHECK";
             this.autoCheckButton.UseVisualStyleBackColor = false;
+            // startupPanel
+            this.startupPanel.BackColor = System.Drawing.Color.FromArgb(43, 58, 66);
+            this.startupPanel.Controls.Add(this.startupTitleLabel);
+            this.startupPanel.Controls.Add(this.startupStatusLabel);
+            this.startupPanel.Controls.Add(this.createStartupButton);
+            this.startupPanel.Controls.Add(this.deleteStartupButton);
+            this.startupPanel.Location = new System.Drawing.Point(34, 558);
+            this.startupPanel.Size = new System.Drawing.Size(752, 90);
+            this.startupTitleLabel.AutoSize = true;
+            this.startupTitleLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
+            this.startupTitleLabel.ForeColor = System.Drawing.Color.White;
+            this.startupTitleLabel.Location = new System.Drawing.Point(22, 14);
+            this.startupTitleLabel.Text = "WINDOWS STARTUP";
+            this.startupStatusLabel.AutoEllipsis = true;
+            this.startupStatusLabel.AutoSize = false;
+            this.startupStatusLabel.ForeColor = System.Drawing.Color.FromArgb(181, 199, 200);
+            this.startupStatusLabel.Location = new System.Drawing.Point(23, 51);
+            this.startupStatusLabel.Size = new System.Drawing.Size(450, 25);
+            this.startupStatusLabel.Text = "Checking Task Scheduler...";
+            this.createStartupButton.BackColor = System.Drawing.Color.FromArgb(38, 166, 154);
+            this.createStartupButton.FlatAppearance.BorderSize = 0;
+            this.createStartupButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.createStartupButton.ForeColor = System.Drawing.Color.White;
+            this.createStartupButton.Location = new System.Drawing.Point(494, 20);
+            this.createStartupButton.Size = new System.Drawing.Size(105, 48);
+            this.createStartupButton.Text = "ADD";
+            this.createStartupButton.UseVisualStyleBackColor = false;
+            this.deleteStartupButton.BackColor = System.Drawing.Color.FromArgb(55, 72, 80);
+            this.deleteStartupButton.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(78, 104, 109);
+            this.deleteStartupButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.deleteStartupButton.ForeColor = System.Drawing.Color.White;
+            this.deleteStartupButton.Location = new System.Drawing.Point(615, 20);
+            this.deleteStartupButton.Size = new System.Drawing.Size(105, 48);
+            this.deleteStartupButton.Text = "REMOVE";
+            this.deleteStartupButton.UseVisualStyleBackColor = false;
             // statusPanel
             this.statusPanel.BackColor = System.Drawing.Color.FromArgb(31, 45, 53);
             this.statusPanel.Controls.Add(this.statusDot);
             this.statusPanel.Controls.Add(this.statusLabel);
-            this.statusPanel.Location = new System.Drawing.Point(34, 558);
+            this.statusPanel.Location = new System.Drawing.Point(34, 664);
             this.statusPanel.Size = new System.Drawing.Size(752, 52);
             this.statusDot.AutoSize = true;
             this.statusDot.Font = new System.Drawing.Font("Segoe UI", 12F);
@@ -240,7 +286,8 @@ namespace AutoCheckIn
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(35, 48, 56);
-            this.ClientSize = new System.Drawing.Size(820, 635);
+            this.ClientSize = new System.Drawing.Size(820, 742);
+            this.Controls.Add(this.startupPanel);
             this.Controls.Add(this.statusPanel);
             this.Controls.Add(this.schedulePanel);
             this.Controls.Add(this.manualPanel);
@@ -257,6 +304,7 @@ namespace AutoCheckIn
             this.manualPanel.ResumeLayout(false); this.manualPanel.PerformLayout();
             this.schedulePanel.ResumeLayout(false); this.schedulePanel.PerformLayout();
             this.statusPanel.ResumeLayout(false); this.statusPanel.PerformLayout();
+            this.startupPanel.ResumeLayout(false); this.startupPanel.PerformLayout();
             this.ResumeLayout(false);
         }
     }

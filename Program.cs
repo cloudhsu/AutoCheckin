@@ -13,9 +13,12 @@ namespace AutoCheckIn
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            var credentialStore = new DpapiCredentialStore();
             Application.Run(new MainForm(
-                new CrackClient(),
-                new DailyCheck(new CrackClient()),
+                new CredentialSavingUofClient(new CrackClient(), credentialStore),
+                new DailyCheck(new CredentialSavingUofClient(new CrackClient(), credentialStore)),
+                credentialStore,
+                new WindowsStartupTaskService(),
                 UiTheme.Random()));
         }
     }

@@ -12,10 +12,7 @@ namespace AutoCheckIn
 
         public DpapiCredentialStore()
         {
-            var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "AutoCheckIn");
-            m_filePath = Path.Combine(directory, "credentials.dat");
+            m_filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "credentials.dat");
         }
 
         public Credentials Load()
@@ -73,8 +70,6 @@ namespace AutoCheckIn
             try
             {
                 var encrypted = ProtectedData.Protect(clear, Entropy, DataProtectionScope.CurrentUser);
-                var directory = Path.GetDirectoryName(m_filePath);
-                Directory.CreateDirectory(directory);
                 var temporaryPath = m_filePath + ".tmp";
                 File.WriteAllBytes(temporaryPath, encrypted);
                 if (File.Exists(m_filePath))

@@ -1,25 +1,35 @@
-﻿using System;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AutoCheckIn
 {
     public partial class MainForm : Form
     {
-        CrackClient m_crack = new CrackClient();
-        DailyCheck m_dailyCheck = new DailyCheck();
-        Timer m_timer;
-
-        NotifyIcon m_trayIcon;
-        ContextMenuStrip m_trayMenu;
+        private readonly IUofClient m_uofClient;
+        private readonly IAutoCheckScheduler m_dailyCheck;
+        private readonly CancellationTokenSource m_formCancellation = new CancellationTokenSource();
+        private readonly System.Windows.Forms.Timer m_timer;
+        private readonly NotifyIcon m_trayIcon;
+        private readonly ContextMenuStrip m_trayMenu;
 
         public MainForm()
+            : this(new CrackClient(), new DailyCheck(new CrackClient()))
         {
+            // Required by the WinForms designer. Program.cs is the runtime
+            // composition root and uses the injectable constructor below.
+        }
+
+        internal MainForm(IUofClient uofClient, IAutoCheckScheduler dailyCheck)
+        {
+            m_uofClient = uofClient ?? throw new ArgumentNullException(nameof(uofClient));
+            m_dailyCheck = dailyCheck ?? throw new ArgumentNullException(nameof(dailyCheck));
             InitializeComponent();
 
-            this.Icon = Properties.Resources.cloudbox;
+            Icon = Properties.Resources.cloudbox;
 
-            m_timer = new Timer();
-            m_timer.Interval = 100;
+            m_timer = new System.Windows.Forms.Timer { Interval = 100 };
             m_timer.Tick += Timer_Tick;
             m_timer.Start();
 
@@ -27,176 +37,167 @@ namespace AutoCheckIn
             m_trayMenu.Items.Add("Open", null, OnOpen);
             m_trayMenu.Items.Add("Exit", null, OnExit);
 
-            m_trayIcon = new NotifyIcon();
-            m_trayIcon.Text = "Auto check";
-            m_trayIcon.Icon = Properties.Resources.cloudbox;
-            m_trayIcon.ContextMenuStrip = m_trayMenu;
-            //m_trayIcon.Visible = true;
+            m_trayIcon = new NotifyIcon
+            {
+                Text = "Auto check",
+                Icon = Properties.Resources.cloudbox,
+                ContextMenuStrip = m_trayMenu
+            };
             m_trayIcon.DoubleClick += (s, e) => ShowMainWindow();
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            if(this.WindowState == FormWindowState.Minimized)
+            if (WindowState == FormWindowState.Minimized)
             {
-                this.Hide();
+                Hide();
                 m_trayIcon.Visible = true;
             }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            DialogResult result = MessageBox.Show("Do you want to exit?", "Confirm Exit", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+            var result = MessageBox.Show(
+                "Do you want to exit?", "Confirm Exit", MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
 
             if (result == DialogResult.No)
             {
                 e.Cancel = true;
+                return;
             }
-            else
-            {
-                m_trayIcon.Visible = false;
-                base.OnFormClosing(e);
-            }
+
+            m_formCancellation.Cancel();
+            m_dailyCheck.Dispose();
+            m_timer.Stop();
+            m_trayIcon.Visible = false;
+            base.OnFormClosing(e);
         }
 
-        void OnOpen(object sender, EventArgs e)
-        {
-            ShowMainWindow();
-        }
+        private void OnOpen(object sender, EventArgs e) => ShowMainWindow();
+        private void OnExit(object sender, EventArgs e) => Application.Exit();
 
-        void OnExit(object sender, EventArgs e)
+        private void ShowMainWindow()
         {
-            Application.Exit();
-        }
-        void ShowMainWindow()
-        {
-            this.Show();
-            this.WindowState = FormWindowState.Normal;
-            this.BringToFront();
+            Show();
+            WindowState = FormWindowState.Normal;
+            BringToFront();
             m_trayIcon.Visible = false;
         }
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            this.lblAutoStatus.Text = m_dailyCheck.StatusMessage;
-            this.lblCheckIn.Text = m_dailyCheck.CheckInMessage;
-            this.lblCheckOut.Text = m_dailyCheck.CheckOutMessage;
-
+            lblAutoStatus.Text = m_dailyCheck.StatusMessage;
+            lblCheckIn.Text = m_dailyCheck.CheckInMessage;
+            lblCheckOut.Text = m_dailyCheck.CheckOutMessage;
         }
 
-        private void btnCheckIn_Click(object sender, EventArgs e)
+        private async void btnCheckIn_Click(object sender, EventArgs e)
         {
-            string sId = this.txtID.Text;
-            string sPd = this.txtPD.Text;
-            
-
-
-            if(string.IsNullOrEmpty(sId))
-            {
-                MessageBox.Show("Please enter ID.");
-                return;
-            }
-            if (string.IsNullOrEmpty(sPd))
-            {
-                MessageBox.Show("Please enter Password.");
-                return;
-            }
-
-            this.lblStatus.Text = "";
-
-            Console.WriteLine("Check In with ID={0}, PD={1}", sId, sPd);
-
-            m_crack.LoginID = sId;
-            m_crack.Password = sPd;
-            m_crack.checkInOut(CrackClient.CheckAction.CheckIn);
-
-            this.lblStatus.Text = m_crack.StatusMessage;
+            await RunManualCheckAsync(CheckAction.CheckIn);
         }
 
-        private void btnCheckOut_Click(object sender, EventArgs e)
+        private async void btnCheckOut_Click(object sender, EventArgs e)
         {
-            string sId = this.txtID.Text;
-            string sPd = this.txtPD.Text;
-            
-
-            if (string.IsNullOrEmpty(sId))
-            {
-                MessageBox.Show("Please enter ID.");
-                return;
-            }
-            if (string.IsNullOrEmpty(sPd))
-            {
-                MessageBox.Show("Please enter Password.");
-                return;
-            }
-
-            this.lblStatus.Text = "";
-
-            Console.WriteLine("Check Out with ID={0}, PD={1}", sId, sPd);
-
-            m_crack.LoginID = sId;
-            m_crack.Password = sPd;
-
-            m_crack.checkInOut(CrackClient.CheckAction.CheckOut);
-
-            this.lblStatus.Text = m_crack.StatusMessage;
+            await RunManualCheckAsync(CheckAction.CheckOut);
         }
 
         private void btnAutoCheck_Click(object sender, EventArgs e)
         {
-            if (this.btnAutoCheck.Text == "Stop")
+            if (btnAutoCheck.Text == "Stop")
             {
-                this.txtID.Enabled = true;
-                this.txtPD.Enabled = true;
-                this.btnCheckIn.Enabled = true;
-                this.btnCheckOut.Enabled = true;
-                this.btnAutoCheck.Text = "Auto Check";
+                txtID.Enabled = true;
+                txtPD.Enabled = true;
+                btnCheckIn.Enabled = true;
+                btnCheckOut.Enabled = true;
+                btnAutoCheck.Text = "Auto Check";
                 m_dailyCheck.Stop();
+                return;
             }
-            else
+
+            string loginId;
+            string password;
+            if (!TryGetCredentials(out loginId, out password))
             {
-                string sId = this.txtID.Text;
-                string sPd = this.txtPD.Text;
-
-                if (string.IsNullOrEmpty(sId))
-                {
-                    MessageBox.Show("Please enter ID.");
-                    return;
-                }
-                if (string.IsNullOrEmpty(sPd))
-                {
-                    MessageBox.Show("Please enter Password.");
-                    return;
-                }
-
-                Console.WriteLine("Auto Check with ID={0}, PD={1}", sId, sPd);
-
-                m_dailyCheck.LoginID = sId;
-                m_dailyCheck.Password = sPd;
-
-                this.txtID.Enabled = false;
-                this.txtPD.Enabled = false;
-                this.btnCheckIn.Enabled = false;
-                this.btnCheckOut.Enabled = false;
-                this.btnAutoCheck.Text = "Stop";
-                m_dailyCheck.Start();
+                return;
             }
+
+            txtID.Enabled = false;
+            txtPD.Enabled = false;
+            btnCheckIn.Enabled = false;
+            btnCheckOut.Enabled = false;
+            btnAutoCheck.Text = "Stop";
+            m_dailyCheck.Start(loginId, password);
         }
 
         private void cbxWorkingDay_CheckedChanged(object sender, EventArgs e)
         {
-            CheckBox box = sender as CheckBox;
-
-            if (box != null)
+            var box = sender as CheckBox;
+            int day;
+            if (box != null && int.TryParse(box.Tag?.ToString(), out day) && day >= 0 && day <= 6)
             {
-                int day = int.Parse(box.Tag.ToString());
-                Console.WriteLine($"CheckBox={box.Name} is {box.Checked}");
+                m_dailyCheck.SetWorkingDay((DayOfWeek)day, box.Checked);
+            }
+        }
 
-                m_dailyCheck.setDayOff(day,box.Checked);
+        private async Task RunManualCheckAsync(CheckAction action)
+        {
+            string loginId;
+            string password;
+            if (!TryGetCredentials(out loginId, out password))
+            {
+                return;
             }
 
+            SetActionButtonsEnabled(false);
+            lblStatus.Text = $"{action} in progress...";
+            try
+            {
+                var result = await m_uofClient.CheckAsync(
+                    loginId, password, action, m_formCancellation.Token);
+                lblStatus.Text = result.Message;
+            }
+            catch (Exception ex)
+            {
+                // Keep the UI boundary safe even if an alternate IUofClient throws.
+                Console.WriteLine("Unexpected manual check error: " + ex);
+                lblStatus.Text = "Unexpected check error: " + ex.Message;
+            }
+            finally
+            {
+                if (!IsDisposed)
+                {
+                    SetActionButtonsEnabled(true);
+                }
+            }
         }
-        
+
+        private bool TryGetCredentials(out string loginId, out string password)
+        {
+            loginId = txtID.Text;
+            password = txtPD.Text;
+
+            if (string.IsNullOrWhiteSpace(loginId))
+            {
+                MessageBox.Show("Please enter ID.");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(password))
+            {
+                MessageBox.Show("Please enter Password.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void SetActionButtonsEnabled(bool enabled)
+        {
+            btnCheckIn.Enabled = enabled;
+            btnCheckOut.Enabled = enabled;
+            btnAutoCheck.Enabled = enabled;
+        }
     }
 }

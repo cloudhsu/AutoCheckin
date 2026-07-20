@@ -52,8 +52,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CheckAction.cs" />
+    <Compile Include="CheckResult.cs" />
     <Compile Include="CrackClient.cs" />
     <Compile Include="DailyCheck.cs" />
+    <Compile Include="IAutoCheckScheduler.cs" />
+    <Compile Include="IUofClient.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

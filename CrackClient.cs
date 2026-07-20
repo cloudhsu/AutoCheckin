@@ -1,177 +1,293 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
-using static System.Net.WebRequestMethods;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AutoCheckIn
 {
-    internal class CrackClient
+    /// <summary>
+    /// Talks to the UOF Web Forms site. All site and transport failures are
+    /// converted to CheckResult so callers never need to handle HTTP details.
+    /// </summary>
+    internal sealed class CrackClient : IUofClient
     {
-        public CrackClient() { }
+        private const string BaseUrl = "http://192.168.13.212";
+        private const string LoginUrl = BaseUrl + "/UOF/Login.aspx";
+        private const string AuthenticationUrl = BaseUrl + "/UOF/Login/Authentication.aspx";
+        private const string HomePageUrl = BaseUrl + "/UOF/Homepage.aspx";
 
-        public enum CheckAction
+        public async Task<CheckResult> CheckAsync(
+            string loginId,
+            string password,
+            CheckAction action,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            CheckIn = 2,
-            CheckOut = 4
+            if (string.IsNullOrWhiteSpace(loginId) || string.IsNullOrEmpty(password))
+            {
+                return CheckResult.Failure("ID and password are required.");
+            }
+
+            try
+            {
+                using (var handler = CreateHandler())
+                using (var client = CreateClient(handler))
+                {
+                    var loginPage = await GetTextAsync(client, LoginUrl, cancellationToken).ConfigureAwait(false);
+                    if (!loginPage.Succeeded)
+                    {
+                        return loginPage.Result;
+                    }
+
+                    var tokens = ReadLoginTokens(loginPage.Content);
+                    if (tokens == null)
+                    {
+                        return CheckResult.Failure("UOF login page format is invalid or has changed.");
+                    }
+
+                    var loginResult = await LoginAsync(
+                        client, loginId, password, tokens, cancellationToken).ConfigureAwait(false);
+                    if (!loginResult.Succeeded)
+                    {
+                        return loginResult.Result;
+                    }
+
+                    if (loginResult.Content.IndexOf("Authentication.aspx", StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        return CheckResult.Failure("Login failed. Please check ID/password or UOF status.");
+                    }
+
+                    var authentication = await GetTextAsync(
+                        client, AuthenticationUrl, cancellationToken).ConfigureAwait(false);
+                    if (!authentication.Succeeded)
+                    {
+                        return authentication.Result;
+                    }
+
+                    var homePage = await GetTextAsync(client, HomePageUrl, cancellationToken).ConfigureAwait(false);
+                    if (!homePage.Succeeded)
+                    {
+                        return homePage.Result;
+                    }
+
+                    var form = ReadHiddenFields(homePage.Content);
+                    if (form == null)
+                    {
+                        return CheckResult.Failure("UOF home page format is invalid or has changed.");
+                    }
+
+                    PopulateCheckForm(form, action);
+                    return await SubmitCheckAsync(client, form, action, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return CheckResult.Failure("UOF operation was cancelled.");
+            }
+            catch (HttpRequestException ex)
+            {
+                return CheckResult.Failure("Cannot connect to UOF: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Unexpected UOF error: " + ex);
+                return CheckResult.Failure("UOF operation failed: " + ex.Message);
+            }
         }
 
-        public string StatusMessage { get; set; }
-        public string LoginID { get; set; }
-        public string Password { get; set; }
-
-        const string baseUrl = "http://192.168.13.212";
-        const string loginUrl = "http://192.168.13.212/UOF/Login.aspx";
-        const string authenticationUrl = "http://192.168.13.212/UOF/Login/Authentication.aspx";
-        const string homePageUrl = "http://192.168.13.212/UOF/Homepage.aspx";
-
-        public void checkInOut(CheckAction checkAction)
+        private static HttpClientHandler CreateHandler()
         {
-            var handler = new HttpClientHandler()
+            return new HttpClientHandler
             {
                 CookieContainer = new CookieContainer(),
                 UseCookies = true,
-                AutomaticDecompression = DecompressionMethods.Deflate,
+                AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
                 AllowAutoRedirect = true
             };
+        }
 
-            var client = new HttpClient(handler);
-            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0");
+        private static HttpClient CreateClient(HttpMessageHandler handler)
+        {
+            var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(30) };
+            client.DefaultRequestHeaders.TryAddWithoutValidation(
+                "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AutoCheckIn/1.0");
+            return client;
+        }
 
-            var response = client.GetAsync(loginUrl).Result;
-            var html = response.Content.ReadAsStringAsync().Result;
-            Console.WriteLine("===========Get Login.aspx====================================");
-            Console.WriteLine($"HTTP status: {response.StatusCode}");
-            Console.WriteLine($"HTTP length: {html.Length}");
-            //Console.WriteLine(html);
+        private static async Task<HttpTextResult> GetTextAsync(
+            HttpClient client, string url, CancellationToken cancellationToken)
+        {
+            using (var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false))
+            {
+                if (!response.IsSuccessStatusCode)
+                {
+                    return HttpTextResult.Fail(HttpFailure(url, response.StatusCode));
+                }
 
-            var doc = new HtmlAgilityPack.HtmlDocument();
-            doc.LoadHtml( html );
+                return HttpTextResult.Ok(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+            }
+        }
 
-            string viewState = doc.DocumentNode.SelectSingleNode("//input[@name='__VIEWSTATE']")?.GetAttributeValue("value", "") ?? "";
-            string viewStateGen = doc.DocumentNode.SelectSingleNode("//input[@name='__VIEWSTATEGENERATOR']")?.GetAttributeValue("value", "") ?? "";
+        private static LoginTokens ReadLoginTokens(string html)
+        {
+            var document = new HtmlDocument();
+            document.LoadHtml(html);
+            var viewState = document.DocumentNode.SelectSingleNode("//input[@name='__VIEWSTATE']")
+                ?.GetAttributeValue("value", null);
+            var generator = document.DocumentNode.SelectSingleNode("//input[@name='__VIEWSTATEGENERATOR']")
+                ?.GetAttributeValue("value", null);
 
-            var loginForm = new Dictionary<string, string>
+            return string.IsNullOrEmpty(viewState) || string.IsNullOrEmpty(generator)
+                ? null
+                : new LoginTokens(viewState, generator);
+        }
+
+        private static async Task<HttpTextResult> LoginAsync(
+            HttpClient client,
+            string loginId,
+            string password,
+            LoginTokens tokens,
+            CancellationToken cancellationToken)
+        {
+            var form = new Dictionary<string, string>
             {
                 ["ScriptManager1"] = "UpdatePanel1|btnSubmit",
-                ["__VIEWSTATE"] = viewState,
-                ["__VIEWSTATEGENERATOR"] = viewStateGen,
+                ["__VIEWSTATE"] = tokens.ViewState,
+                ["__VIEWSTATEGENERATOR"] = tokens.Generator,
                 ["__EVENTTARGET"] = "",
                 ["__EVENTARGUMENT"] = "",
                 ["__LASTFOCUS"] = "",
                 ["ddlCulture"] = "zh-TW",
-
-                ["txtAccount"] =LoginID,
-                ["txtPwd"] = Password,
+                ["txtAccount"] = loginId,
+                ["txtPwd"] = password,
                 ["cboKeepaccount"] = "on",
-
                 ["txtAccount2"] = "",
                 ["hdflag"] = "false",
                 ["hfIsAdAuth"] = "false",
                 ["hfUserGuid"] = "",
                 ["hfIsDownloadComplete"] = "0",
-
                 ["__ASYNCPOST"] = "true",
                 ["btnSubmit"] = "登入"
             };
 
-            var reqLogin = new HttpRequestMessage(HttpMethod.Post, loginUrl)
+            using (var request = new HttpRequestMessage(HttpMethod.Post, LoginUrl))
             {
-                Content = new FormUrlEncodedContent(loginForm)
-            };
-            reqLogin.Headers.Referrer = new Uri(loginUrl);
-            reqLogin.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
-            reqLogin.Headers.TryAddWithoutValidation("X-MicrosoftAjax", "Delta=true");
-            reqLogin.Headers.TryAddWithoutValidation("Origin", baseUrl);
-            reqLogin.Headers.TryAddWithoutValidation("Accept-Language", "zh-TW,zh;q=0.9,en;q=0.8");
+                request.Content = new FormUrlEncodedContent(form);
+                request.Headers.Referrer = new Uri(LoginUrl);
+                request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
+                request.Headers.TryAddWithoutValidation("X-MicrosoftAjax", "Delta=true");
+                request.Headers.TryAddWithoutValidation("Origin", BaseUrl);
+                request.Headers.TryAddWithoutValidation("Accept-Language", "zh-TW,zh;q=0.9,en;q=0.8");
 
-            var respLogin = client.SendAsync(reqLogin).GetAwaiter().GetResult();
-            var bodyLogin = respLogin.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                using (var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false))
+                {
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return HttpTextResult.Fail(HttpFailure(LoginUrl, response.StatusCode));
+                    }
 
-            Console.WriteLine("===========Post Login.aspx====================================");
-            Console.WriteLine($"Login status: {(int)respLogin.StatusCode} {respLogin.StatusCode}");
-            //Console.WriteLine(bodyLogin.Length > 1000 ? bodyLogin.Substring(0, 1000) : bodyLogin);
+                    return HttpTextResult.Ok(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                }
+            }
+        }
 
-            if (bodyLogin.IndexOf("Authentication.aspx") == -1)
+        private static Dictionary<string, string> ReadHiddenFields(string html)
+        {
+            var document = new HtmlDocument();
+            document.LoadHtml(html);
+            var inputs = document.DocumentNode.SelectNodes("//input[@type='hidden']");
+            if (inputs == null)
             {
-                Console.WriteLine("Login fail.");
-                StatusMessage = "Login fail, please check ID/Password.";
-                return;
+                return null;
             }
 
-            var authenticationResponse = client.GetAsync(authenticationUrl).Result;
-            var authenticationHtml = authenticationResponse.Content.ReadAsStringAsync().Result;
-
-            Console.WriteLine("===========Get authentication.aspx============================");
-            Console.WriteLine($"Authentication HTTP status: {authenticationResponse.StatusCode}");
-            Console.WriteLine($"Authentication HTTP length: {authenticationHtml.Length}");
-            //Console.WriteLine(authenticationHtml);
-
-            var authenticationDoc = new HtmlAgilityPack.HtmlDocument();
-            authenticationDoc.LoadHtml(authenticationHtml);
-            
-            var homePageResponse = client.GetAsync(homePageUrl).Result;
-            var homePageHtml = homePageResponse.Content.ReadAsStringAsync().Result;
-
-            Console.WriteLine("===========Get HomePage.aspx====================================");
-            Console.WriteLine($"HomePage HTTP status: {homePageResponse.StatusCode}");
-            Console.WriteLine($"HomePage HTTP length: {homePageHtml.Length}");
-            //Console.WriteLine(homePageHtml);
-
-            var checkForm = new Dictionary<string, string>();
-
-            var homePageDoc = new HtmlAgilityPack.HtmlDocument();
-            homePageDoc.LoadHtml(homePageHtml);
-            var hiddenInputs = homePageDoc.DocumentNode.SelectNodes("//input[@type='hidden']");
-
-            if (hiddenInputs != null)
+            var form = new Dictionary<string, string>();
+            foreach (var input in inputs)
             {
-                foreach (var hiddenInput in hiddenInputs)
+                var name = input.GetAttributeValue("name", string.Empty);
+                if (!string.IsNullOrEmpty(name))
                 {
-                    var name = hiddenInput.GetAttributeValue("name", "");
-                    var value = hiddenInput.GetAttributeValue("value", "");
-                    //Console.WriteLine($"{name} = {value}");
-                    if (!string.IsNullOrEmpty(name))
-                    {
-                        checkForm.Add(name, value);
-                    }
+                    // Some UOF pages contain duplicate hidden inputs; the last value wins.
+                    form[name] = input.GetAttributeValue("value", string.Empty);
                 }
             }
 
-            int actionValue = (int)checkAction;
+            return form.Count == 0 ? null : form;
+        }
 
-            checkForm["__EVENTTARGET"] = "ctl00$ContentPlaceHolder1$RadDockd3e9d57ac1744d8ba17c7c2a3354e5de$C$widget$RadToolBar1";
-            checkForm["__EVENTARGUMENT"] = actionValue.ToString();
-            checkForm["__ASYNCPOST"] = "true";
+        private static void PopulateCheckForm(Dictionary<string, string> form, CheckAction action)
+        {
+            form["__EVENTTARGET"] = "ctl00$ContentPlaceHolder1$RadDockd3e9d57ac1744d8ba17c7c2a3354e5de$C$widget$RadToolBar1";
+            form["__EVENTARGUMENT"] = ((int)action).ToString();
+            form["__ASYNCPOST"] = "true";
+            form["ctl00$ScriptManager1"] = "ctl00$ContentPlaceHolder1$RadDockd3e9d57ac1744d8ba17c7c2a3354e5de$C$widget$UpdatePanel1|ctl00$ContentPlaceHolder1$RadDockd3e9d57ac1744d8ba17c7c2a3354e5de$C$widget$RadToolBar1";
+            form["ctl00$ContentPlaceHolder1$RadDock1a3205a5960143ae8c7577df63d948c8$C$widget$RadToolBar1$i0$rdDate"] = DateTime.Now.ToString("yyyy-MM-dd");
+            form["ctl00$ContentPlaceHolder1$RadDock1a3205a5960143ae8c7577df63d948c8$C$widget$RadToolBar1$i0$rdDate$dateInput"] = DateTime.Now.ToString("yyyy/MM/dd");
+            form["ctl00$ContentPlaceHolder1$RadDockd3e9d57ac1744d8ba17c7c2a3354e5de$C$widget$RadToolBar1$i0$ddlDate"] = DateTime.Now.ToString("yyyy/MM/dd");
+            form["ctl00$ContentPlaceHolder1$RadDock1a3205a5960143ae8c7577df63d948c8$C$widget$RadToolBar1$i2$ddlLocation"] = "ALL";
+        }
 
-            checkForm["ctl00$ScriptManager1"] =
-              "ctl00$ContentPlaceHolder1$RadDockd3e9d57ac1744d8ba17c7c2a3354e5de$C$widget$UpdatePanel1|ctl00$ContentPlaceHolder1$RadDockd3e9d57ac1744d8ba17c7c2a3354e5de$C$widget$RadToolBar1";
-
-            checkForm["ctl00$ContentPlaceHolder1$RadDock1a3205a5960143ae8c7577df63d948c8$C$widget$RadToolBar1$i0$rdDate"] = DateTime.Now.ToString("yyyy-MM-dd");
-            checkForm["ctl00$ContentPlaceHolder1$RadDock1a3205a5960143ae8c7577df63d948c8$C$widget$RadToolBar1$i0$rdDate$dateInput"] = DateTime.Now.ToString("yyyy/MM/dd");
-            checkForm["ctl00$ContentPlaceHolder1$RadDockd3e9d57ac1744d8ba17c7c2a3354e5de$C$widget$RadToolBar1$i0$ddlDate"] = DateTime.Now.ToString("yyyy/MM/dd");
-            checkForm["ctl00$ContentPlaceHolder1$RadDock1a3205a5960143ae8c7577df63d948c8$C$widget$RadToolBar1$i2$ddlLocation"] = "ALL";
-            
-            var reqCheck = new HttpRequestMessage(HttpMethod.Post, homePageUrl)
+        private static async Task<CheckResult> SubmitCheckAsync(
+            HttpClient client,
+            Dictionary<string, string> form,
+            CheckAction action,
+            CancellationToken cancellationToken)
+        {
+            using (var request = new HttpRequestMessage(HttpMethod.Post, HomePageUrl))
             {
-                Content = new FormUrlEncodedContent(checkForm)
-            };
-            reqCheck.Headers.Referrer = new Uri(homePageUrl);
-            reqCheck.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
-            reqCheck.Headers.TryAddWithoutValidation("X-MicrosoftAjax", "Delta=true");
-            //reqCheck.Headers.TryAddWithoutValidation("Origin", baseUrl);
-            //reqCheck.Headers.TryAddWithoutValidation("Accept-Language", "zh-TW,zh;q=0.9,en;q=0.8");
+                request.Content = new FormUrlEncodedContent(form);
+                request.Headers.Referrer = new Uri(HomePageUrl);
+                request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
+                request.Headers.TryAddWithoutValidation("X-MicrosoftAjax", "Delta=true");
 
-            var respCheck = client.SendAsync(reqCheck).GetAwaiter().GetResult();
-            var bodyCheck = respCheck.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                using (var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false))
+                {
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return CheckResult.Failure(HttpFailure(HomePageUrl, response.StatusCode));
+                    }
 
-            Console.WriteLine("===========Check In/Out====================================");
-            Console.WriteLine("Check Action: " + checkAction.ToString());
-            Console.WriteLine($"Check In/Out status: {(int)respCheck.StatusCode} {respCheck.StatusCode}");
-            //Console.WriteLine(bodyCheck.Length > 1000 ? bodyCheck.Substring(0, 1000) : bodyCheck);
+                    return CheckResult.Success(
+                        $"{action} status: {response.StatusCode} at {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                }
+            }
+        }
 
-            StatusMessage = $"{checkAction} status: {respCheck.StatusCode} at {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+        private static string HttpFailure(string url, HttpStatusCode statusCode)
+        {
+            return $"UOF returned HTTP {(int)statusCode} ({statusCode}) for {new Uri(url).AbsolutePath}.";
+        }
+
+        private sealed class LoginTokens
+        {
+            public LoginTokens(string viewState, string generator)
+            {
+                ViewState = viewState;
+                Generator = generator;
+            }
+
+            public string ViewState { get; }
+            public string Generator { get; }
+        }
+
+        private sealed class HttpTextResult
+        {
+            private HttpTextResult(bool succeeded, string content, CheckResult result)
+            {
+                Succeeded = succeeded;
+                Content = content;
+                Result = result;
+            }
+
+            public bool Succeeded { get; }
+            public string Content { get; }
+            public CheckResult Result { get; }
+
+            public static HttpTextResult Ok(string content) => new HttpTextResult(true, content, null);
+            public static HttpTextResult Fail(string message) =>
+                new HttpTextResult(false, null, CheckResult.Failure(message));
         }
     }
 }

@@ -1,157 +1,218 @@
-﻿using System;
+using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace AutoCheckIn
 {
-    internal class DailyCheck : IDisposable
+    internal sealed class DailyCheck : IAutoCheckScheduler
     {
-        Thread m_worker;
-        ManualResetEventSlim m_stop;
-        int m_targetCheckIn;
-        int m_targetCheckOut;
-        DateTime m_today;
-        bool m_isRunning = false;
-        bool m_isCheckIn = false;
-        bool m_isCheckOut = false;
+        private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(20);
+        private static readonly TimeSpan FailureRetryInterval = TimeSpan.FromMinutes(5);
 
-        bool[] m_isWorkingDay = new bool[7] { false, true, true, true, true, true, false };
+        private readonly IUofClient m_uofClient;
+        private readonly bool[] m_isWorkingDay = { false, true, true, true, true, true, false };
+        private readonly Random m_random = new Random();
+        private readonly object m_stateLock = new object();
 
-        static readonly TimeSpan CheckInStart = new TimeSpan(8, 50, 0);
-        static readonly TimeSpan CheckInStop = new TimeSpan(8, 59, 0);
+        private CancellationTokenSource m_cancellation;
+        private Task m_worker;
+        private DateTime m_today;
+        private DateTime m_nextCheckInAttempt;
+        private DateTime m_nextCheckOutAttempt;
+        private int m_targetCheckIn;
+        private int m_targetCheckOut;
+        private bool m_isCheckIn;
+        private bool m_isCheckOut;
+        private string m_loginId;
+        private string m_password;
+        private string m_statusMessage = string.Empty;
+        private string m_checkInMessage = string.Empty;
+        private string m_checkOutMessage = string.Empty;
 
-        static readonly TimeSpan CheckOutStart = new TimeSpan(18, 1, 0);
-        static readonly TimeSpan CheckOutStop = new TimeSpan(18, 9, 59);
-
-        public string LoginID { get; set; }
-        public string Password { get; set; }
-
-        public string StatusMessage { get; set; }
-
-        public string CheckInMessage { get; set; }
-        public string CheckOutMessage { get; set; }
-
-        CrackClient m_crack = new CrackClient();
-
-        public DailyCheck()
+        public DailyCheck(IUofClient uofClient)
         {
-            
+            m_uofClient = uofClient ?? throw new ArgumentNullException(nameof(uofClient));
         }
 
-        public void setDayOff(int day, bool isWorking)
-        {
-            m_isWorkingDay[day] = isWorking;
-        }
+        public string StatusMessage { get { lock (m_stateLock) return m_statusMessage; } }
+        public string CheckInMessage { get { lock (m_stateLock) return m_checkInMessage; } }
+        public string CheckOutMessage { get { lock (m_stateLock) return m_checkOutMessage; } }
 
-        public void Start()
+        public void SetWorkingDay(DayOfWeek day, bool isWorking)
         {
-            m_crack.LoginID = LoginID;
-            m_crack.Password = Password;
-
-            if(m_worker == null)
+            lock (m_stateLock)
             {
-                m_worker = new Thread(loop) { IsBackground = true, Name = "DailyCheck" };
-            }
-            if (!m_isRunning)
-            {
-                StatusMessage = "To start auto check.";
-                initial();
-                m_isRunning = true;
-                m_stop = new ManualResetEventSlim(false);
-                m_worker.Start();
-                Console.WriteLine("Auto Check Thread start.");
+                m_isWorkingDay[(int)day] = isWorking;
             }
         }
+
+        public void Start(string loginId, string password)
+        {
+            if (string.IsNullOrWhiteSpace(loginId)) throw new ArgumentException("Login ID is required.", nameof(loginId));
+            if (string.IsNullOrEmpty(password)) throw new ArgumentException("Password is required.", nameof(password));
+
+            lock (m_stateLock)
+            {
+                if (m_worker != null && !m_worker.IsCompleted)
+                {
+                    return;
+                }
+
+                m_loginId = loginId;
+                m_password = password;
+                InitializeDay(DateTime.Now);
+                m_statusMessage = "Auto check started.";
+                m_cancellation = new CancellationTokenSource();
+                m_worker = Task.Run(() => RunAsync(m_cancellation.Token));
+            }
+        }
+
         public void Stop()
         {
-            if (m_isRunning)
+            CancellationTokenSource cancellation;
+            Task worker;
+            lock (m_stateLock)
             {
-                StatusMessage = "Auto check finished.";
-                m_isRunning = false;
-                m_stop.Set();
-                m_worker.Join();
+                cancellation = m_cancellation;
+                worker = m_worker;
+            }
+
+            if (cancellation == null)
+            {
+                return;
+            }
+
+            cancellation.Cancel();
+            try
+            {
+                worker?.GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected during shutdown.
+            }
+
+            lock (m_stateLock)
+            {
+                m_statusMessage = "Auto check finished.";
+                m_checkInMessage = string.Empty;
+                m_checkOutMessage = string.Empty;
+                m_loginId = null;
+                m_password = null;
                 m_worker = null;
-                CheckInMessage = "";
-                CheckOutMessage = "";
+                m_cancellation.Dispose();
+                m_cancellation = null;
             }
         }
 
-        public void Dispose() => Stop();
-
-        private void loop()
+        public void Dispose()
         {
-            while(!m_stop.IsSet)
-            {
-                checkNextDay();
-                autoCheck();
+            Stop();
+        }
 
-                if (m_stop.Wait(TimeSpan.FromSeconds(20)))
+        private async Task RunAsync(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    await CheckScheduleAsync(DateTime.Now, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    // Last line of defence: a scheduler failure must never terminate the process.
+                    Console.WriteLine("Unexpected scheduler error: " + ex);
+                    SetStatus("Auto check error: " + ex.Message);
+                }
+
+                try
+                {
+                    await Task.Delay(PollInterval, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
                 {
                     break;
                 }
             }
-
-            Console.WriteLine("Auto Check Thread finish.");
         }
 
-        void initial()
+        private async Task CheckScheduleAsync(DateTime now, CancellationToken cancellationToken)
         {
-            m_today = DateTime.Now;
-            m_isCheckIn = false;
-            m_isCheckOut = false;
+            CheckAction? pendingAction = null;
+            string loginId;
+            string password;
 
-            m_targetCheckIn = (new Random()).Next() % 9 + 50;
-            m_targetCheckOut = (new Random()).Next() % 9 + 1;
-
-            Console.WriteLine($"It will check in at 8:{m_targetCheckIn}");
-            Console.WriteLine($"It will check out at 18:{m_targetCheckOut}");
-
-            CheckInMessage = $"Auto check in at 8:{m_targetCheckIn}";
-            CheckOutMessage = $"Auto check out at 18:{m_targetCheckOut}";
-        }
-
-        void checkNextDay()
-        {
-            var now = DateTime.Now;
-            if (now.Date > m_today)
+            lock (m_stateLock)
             {
-                StatusMessage = "Reset in new day.";
-                initial();
+                if (now.Date > m_today.Date)
+                {
+                    InitializeDay(now);
+                    m_statusMessage = "Schedule reset for a new day.";
+                }
+
+                if (!m_isWorkingDay[(int)now.DayOfWeek])
+                {
+                    m_statusMessage = "Today is a day off.";
+                    return;
+                }
+
+                if (!m_isCheckIn && now.Hour == 8 && now.Minute >= m_targetCheckIn && now >= m_nextCheckInAttempt)
+                {
+                    pendingAction = CheckAction.CheckIn;
+                    m_nextCheckInAttempt = now.Add(FailureRetryInterval);
+                }
+                else if (!m_isCheckOut && now.Hour == 18 && now.Minute >= m_targetCheckOut && now >= m_nextCheckOutAttempt)
+                {
+                    pendingAction = CheckAction.CheckOut;
+                    m_nextCheckOutAttempt = now.Add(FailureRetryInterval);
+                }
+
+                loginId = m_loginId;
+                password = m_password;
             }
-        }
 
-        void autoCheck()
-        {
-            var now = DateTime.Now;
-
-            if (!m_isWorkingDay[(int)now.DayOfWeek])
+            if (!pendingAction.HasValue)
             {
-                Console.WriteLine("Today is off.");
-                StatusMessage = "Today is off";
                 return;
             }
 
-            if(now.Hour == 8 && now.Minute >= m_targetCheckIn)
-            {
-                // Check In
-                if(!m_isCheckIn)
-                {
-                    m_isCheckIn = true;
-                    Console.WriteLine($"Check In at {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                    m_crack.checkInOut(CrackClient.CheckAction.CheckIn);
-                    StatusMessage = m_crack.StatusMessage;
-                }
-            }
+            var result = await m_uofClient.CheckAsync(
+                loginId, password, pendingAction.Value, cancellationToken).ConfigureAwait(false);
 
-            if(now.Hour == 18 && now.Minute >= m_targetCheckOut)
+            lock (m_stateLock)
             {
-                // Check out
-                if (!m_isCheckOut)
+                if (result.Succeeded)
                 {
-                    m_isCheckOut= true;
-                    Console.WriteLine($"Check Out at {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-                    m_crack.checkInOut(CrackClient.CheckAction.CheckOut);
-                    StatusMessage = m_crack.StatusMessage;
+                    if (pendingAction == CheckAction.CheckIn) m_isCheckIn = true;
+                    if (pendingAction == CheckAction.CheckOut) m_isCheckOut = true;
                 }
+
+                m_statusMessage = result.Message;
+            }
+        }
+
+        private void InitializeDay(DateTime now)
+        {
+            m_today = now.Date;
+            m_isCheckIn = false;
+            m_isCheckOut = false;
+            m_targetCheckIn = m_random.Next(50, 59);
+            m_targetCheckOut = m_random.Next(1, 10);
+            m_nextCheckInAttempt = now.Date;
+            m_nextCheckOutAttempt = now.Date;
+            m_checkInMessage = $"Auto check in at 8:{m_targetCheckIn:00}";
+            m_checkOutMessage = $"Auto check out at 18:{m_targetCheckOut:00}";
+        }
+
+        private void SetStatus(string message)
+        {
+            lock (m_stateLock)
+            {
+                m_statusMessage = message;
             }
         }
     }

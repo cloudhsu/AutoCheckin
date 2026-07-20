@@ -240,7 +240,7 @@ namespace AutoCheckIn
             this.statusLabel.Text = "Ready  •  Waiting for automatic check schedule";
             // newForm1
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 17F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(35, 48, 56);
             this.ClientSize = new System.Drawing.Size(820, 635);
             this.Controls.Add(this.statusPanel);

@@ -7,6 +7,9 @@ namespace AutoCheckIn
         public newForm3()
         {
             InitializeComponent();
+            UiDefaults.ApplyFixedFont(this);
+            this.Icon = Properties.Resources.cloudbox;
+            this.ShowIcon = true;
         }
     }
 }

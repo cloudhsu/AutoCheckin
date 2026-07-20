@@ -15,7 +15,8 @@ namespace AutoCheckIn
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm(
                 new CrackClient(),
-                new DailyCheck(new CrackClient())));
+                new DailyCheck(new CrackClient()),
+                UiTheme.Random()));
         }
     }
 }

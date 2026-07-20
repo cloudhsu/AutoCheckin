@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -15,19 +16,21 @@ namespace AutoCheckIn
         private readonly ContextMenuStrip m_trayMenu;
 
         public MainForm()
-            : this(new CrackClient(), new DailyCheck(new CrackClient()))
+            : this(new CrackClient(), new DailyCheck(new CrackClient()), UiTheme.Amber)
         {
             // Required by the WinForms designer. Program.cs is the runtime
             // composition root and uses the injectable constructor below.
         }
 
-        internal MainForm(IUofClient uofClient, IAutoCheckScheduler dailyCheck)
+        internal MainForm(IUofClient uofClient, IAutoCheckScheduler dailyCheck, UiTheme theme)
         {
             m_uofClient = uofClient ?? throw new ArgumentNullException(nameof(uofClient));
             m_dailyCheck = dailyCheck ?? throw new ArgumentNullException(nameof(dailyCheck));
             InitializeComponent();
 
             Icon = Properties.Resources.cloudbox;
+            ShowIcon = true;
+            ApplyTheme(theme ?? UiTheme.Amber);
 
             m_timer = new System.Windows.Forms.Timer { Interval = 100 };
             m_timer.Tick += Timer_Tick;
@@ -44,6 +47,72 @@ namespace AutoCheckIn
                 ContextMenuStrip = m_trayMenu
             };
             m_trayIcon.DoubleClick += (s, e) => ShowMainWindow();
+        }
+
+        private void ApplyTheme(UiTheme theme)
+        {
+            AutoScaleMode = AutoScaleMode.None;
+            Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
+            BackColor = theme.Window;
+            ForeColor = theme.Text;
+            Text = $"Auto Check V0.7 — {theme.Name}";
+
+            StyleGroup(gbxUser, theme);
+            StyleGroup(gbxManual, theme);
+            StyleGroup(gbxAuto, theme);
+            StyleGroup(gbxWorkingDay, theme);
+            StyleTextBox(txtID, theme);
+            StyleTextBox(txtPD, theme);
+            StylePrimaryButton(btnCheckIn, theme);
+            StyleSecondaryButton(btnCheckOut, theme);
+            StylePrimaryButton(btnAutoCheck, theme);
+
+            lblStatus.ForeColor = theme.MutedText;
+            lblAutoStatus.ForeColor = theme.MutedText;
+            lblCheckIn.ForeColor = theme.Accent;
+            lblCheckOut.ForeColor = theme.Accent;
+        }
+
+        private static void StyleGroup(GroupBox group, UiTheme theme)
+        {
+            group.BackColor = theme.Surface;
+            group.ForeColor = theme.Text;
+            foreach (Control child in group.Controls)
+            {
+                child.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
+                if (!(child is TextBox) && !(child is Button) && !(child is GroupBox))
+                {
+                    child.ForeColor = theme.Text;
+                }
+            }
+        }
+
+        private static void StyleTextBox(TextBox textBox, UiTheme theme)
+        {
+            textBox.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
+            textBox.BackColor = theme.Window;
+            textBox.ForeColor = theme.Text;
+            textBox.BorderStyle = BorderStyle.FixedSingle;
+        }
+
+        private static void StylePrimaryButton(Button button, UiTheme theme)
+        {
+            button.Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold, GraphicsUnit.Point);
+            button.BackColor = theme.Accent;
+            button.ForeColor = theme.Name == "Amber Console" ? Color.FromArgb(24, 24, 27) : Color.White;
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 0;
+            button.UseVisualStyleBackColor = false;
+        }
+
+        private static void StyleSecondaryButton(Button button, UiTheme theme)
+        {
+            button.Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold, GraphicsUnit.Point);
+            button.BackColor = theme.Surface;
+            button.ForeColor = theme.Text;
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderColor = theme.MutedText;
+            button.UseVisualStyleBackColor = false;
         }
 
         protected override void OnResize(EventArgs e)

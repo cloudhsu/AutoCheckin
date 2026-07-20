@@ -1,0 +1,336 @@
+﻿namespace AutoCheckIn
+{
+    partial class MainForm
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            this.lblID = new System.Windows.Forms.Label();
+            this.lblPD = new System.Windows.Forms.Label();
+            this.txtID = new System.Windows.Forms.TextBox();
+            this.txtPD = new System.Windows.Forms.TextBox();
+            this.btnCheckIn = new System.Windows.Forms.Button();
+            this.btnCheckOut = new System.Windows.Forms.Button();
+            this.btnAutoCheck = new System.Windows.Forms.Button();
+            this.gbxManual = new System.Windows.Forms.GroupBox();
+            this.lblStatus = new System.Windows.Forms.Label();
+            this.gbxAuto = new System.Windows.Forms.GroupBox();
+            this.lblAutoStatus = new System.Windows.Forms.Label();
+            this.gbxWorkingDay = new System.Windows.Forms.GroupBox();
+            this.cbxThu = new System.Windows.Forms.CheckBox();
+            this.cbxFri = new System.Windows.Forms.CheckBox();
+            this.cbxMon = new System.Windows.Forms.CheckBox();
+            this.cbxTue = new System.Windows.Forms.CheckBox();
+            this.cbxWed = new System.Windows.Forms.CheckBox();
+            this.gbxUser = new System.Windows.Forms.GroupBox();
+            this.lblCheckIn = new System.Windows.Forms.Label();
+            this.lblCheckOut = new System.Windows.Forms.Label();
+            this.gbxManual.SuspendLayout();
+            this.gbxAuto.SuspendLayout();
+            this.gbxWorkingDay.SuspendLayout();
+            this.gbxUser.SuspendLayout();
+            this.SuspendLayout();
+            // 
+            // lblID
+            // 
+            this.lblID.AutoSize = true;
+            this.lblID.Location = new System.Drawing.Point(57, 41);
+            this.lblID.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblID.Name = "lblID";
+            this.lblID.Size = new System.Drawing.Size(34, 20);
+            this.lblID.TabIndex = 0;
+            this.lblID.Text = "ID:";
+            // 
+            // lblPD
+            // 
+            this.lblPD.AutoSize = true;
+            this.lblPD.Location = new System.Drawing.Point(7, 90);
+            this.lblPD.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblPD.Name = "lblPD";
+            this.lblPD.Size = new System.Drawing.Size(84, 20);
+            this.lblPD.TabIndex = 1;
+            this.lblPD.Text = "Password:";
+            // 
+            // txtID
+            // 
+            this.txtID.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
+            this.txtID.Location = new System.Drawing.Point(99, 38);
+            this.txtID.Margin = new System.Windows.Forms.Padding(4);
+            this.txtID.MaxLength = 20;
+            this.txtID.Name = "txtID";
+            this.txtID.Size = new System.Drawing.Size(179, 31);
+            this.txtID.TabIndex = 2;
+            // 
+            // txtPD
+            // 
+            this.txtPD.Location = new System.Drawing.Point(99, 87);
+            this.txtPD.Margin = new System.Windows.Forms.Padding(4);
+            this.txtPD.MaxLength = 20;
+            this.txtPD.Name = "txtPD";
+            this.txtPD.PasswordChar = '*';
+            this.txtPD.Size = new System.Drawing.Size(179, 31);
+            this.txtPD.TabIndex = 3;
+            // 
+            // btnCheckIn
+            // 
+            this.btnCheckIn.Location = new System.Drawing.Point(18, 32);
+            this.btnCheckIn.Margin = new System.Windows.Forms.Padding(4);
+            this.btnCheckIn.Name = "btnCheckIn";
+            this.btnCheckIn.Size = new System.Drawing.Size(111, 48);
+            this.btnCheckIn.TabIndex = 4;
+            this.btnCheckIn.Text = "Check In";
+            this.btnCheckIn.UseVisualStyleBackColor = true;
+            this.btnCheckIn.Click += new System.EventHandler(this.btnCheckIn_Click);
+            // 
+            // btnCheckOut
+            // 
+            this.btnCheckOut.Location = new System.Drawing.Point(137, 32);
+            this.btnCheckOut.Margin = new System.Windows.Forms.Padding(4);
+            this.btnCheckOut.Name = "btnCheckOut";
+            this.btnCheckOut.Size = new System.Drawing.Size(111, 48);
+            this.btnCheckOut.TabIndex = 5;
+            this.btnCheckOut.Text = "Check Out";
+            this.btnCheckOut.UseVisualStyleBackColor = true;
+            this.btnCheckOut.Click += new System.EventHandler(this.btnCheckOut_Click);
+            // 
+            // btnAutoCheck
+            // 
+            this.btnAutoCheck.Location = new System.Drawing.Point(381, 68);
+            this.btnAutoCheck.Margin = new System.Windows.Forms.Padding(4);
+            this.btnAutoCheck.Name = "btnAutoCheck";
+            this.btnAutoCheck.Size = new System.Drawing.Size(184, 48);
+            this.btnAutoCheck.TabIndex = 6;
+            this.btnAutoCheck.Text = "Auto Check";
+            this.btnAutoCheck.UseVisualStyleBackColor = true;
+            this.btnAutoCheck.Click += new System.EventHandler(this.btnAutoCheck_Click);
+            // 
+            // gbxManual
+            // 
+            this.gbxManual.Controls.Add(this.lblStatus);
+            this.gbxManual.Controls.Add(this.btnCheckIn);
+            this.gbxManual.Controls.Add(this.btnCheckOut);
+            this.gbxManual.Location = new System.Drawing.Point(331, 21);
+            this.gbxManual.Name = "gbxManual";
+            this.gbxManual.Size = new System.Drawing.Size(264, 129);
+            this.gbxManual.TabIndex = 7;
+            this.gbxManual.TabStop = false;
+            this.gbxManual.Text = "Manual";
+            // 
+            // lblStatus
+            // 
+            this.lblStatus.AutoSize = true;
+            this.lblStatus.Location = new System.Drawing.Point(18, 93);
+            this.lblStatus.Name = "lblStatus";
+            this.lblStatus.Size = new System.Drawing.Size(0, 20);
+            this.lblStatus.TabIndex = 6;
+            // 
+            // gbxAuto
+            // 
+            this.gbxAuto.Controls.Add(this.lblCheckOut);
+            this.gbxAuto.Controls.Add(this.lblCheckIn);
+            this.gbxAuto.Controls.Add(this.lblAutoStatus);
+            this.gbxAuto.Controls.Add(this.gbxWorkingDay);
+            this.gbxAuto.Controls.Add(this.btnAutoCheck);
+            this.gbxAuto.Location = new System.Drawing.Point(23, 156);
+            this.gbxAuto.Name = "gbxAuto";
+            this.gbxAuto.Size = new System.Drawing.Size(572, 248);
+            this.gbxAuto.TabIndex = 8;
+            this.gbxAuto.TabStop = false;
+            this.gbxAuto.Text = "Auto";
+            // 
+            // lblAutoStatus
+            // 
+            this.lblAutoStatus.AutoSize = true;
+            this.lblAutoStatus.Location = new System.Drawing.Point(38, 205);
+            this.lblAutoStatus.Name = "lblAutoStatus";
+            this.lblAutoStatus.Size = new System.Drawing.Size(0, 20);
+            this.lblAutoStatus.TabIndex = 13;
+            // 
+            // gbxWorkingDay
+            // 
+            this.gbxWorkingDay.Controls.Add(this.cbxThu);
+            this.gbxWorkingDay.Controls.Add(this.cbxFri);
+            this.gbxWorkingDay.Controls.Add(this.cbxMon);
+            this.gbxWorkingDay.Controls.Add(this.cbxTue);
+            this.gbxWorkingDay.Controls.Add(this.cbxWed);
+            this.gbxWorkingDay.Location = new System.Drawing.Point(15, 39);
+            this.gbxWorkingDay.Name = "gbxWorkingDay";
+            this.gbxWorkingDay.Size = new System.Drawing.Size(359, 89);
+            this.gbxWorkingDay.TabIndex = 12;
+            this.gbxWorkingDay.TabStop = false;
+            this.gbxWorkingDay.Text = "Working Day";
+            // 
+            // cbxThu
+            // 
+            this.cbxThu.AutoSize = true;
+            this.cbxThu.Checked = true;
+            this.cbxThu.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbxThu.Location = new System.Drawing.Point(226, 44);
+            this.cbxThu.Name = "cbxThu";
+            this.cbxThu.Size = new System.Drawing.Size(60, 24);
+            this.cbxThu.TabIndex = 10;
+            this.cbxThu.Tag = "4";
+            this.cbxThu.Text = "Thu";
+            this.cbxThu.UseVisualStyleBackColor = true;
+            this.cbxThu.CheckedChanged += new System.EventHandler(this.cbxWorkingDay_CheckedChanged);
+            // 
+            // cbxFri
+            // 
+            this.cbxFri.AutoSize = true;
+            this.cbxFri.Checked = true;
+            this.cbxFri.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbxFri.Location = new System.Drawing.Point(292, 44);
+            this.cbxFri.Name = "cbxFri";
+            this.cbxFri.Size = new System.Drawing.Size(52, 24);
+            this.cbxFri.TabIndex = 11;
+            this.cbxFri.Tag = "5";
+            this.cbxFri.Text = "Fri";
+            this.cbxFri.UseVisualStyleBackColor = true;
+            this.cbxFri.CheckedChanged += new System.EventHandler(this.cbxWorkingDay_CheckedChanged);
+            // 
+            // cbxMon
+            // 
+            this.cbxMon.AutoSize = true;
+            this.cbxMon.Checked = true;
+            this.cbxMon.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbxMon.Location = new System.Drawing.Point(17, 44);
+            this.cbxMon.Name = "cbxMon";
+            this.cbxMon.Size = new System.Drawing.Size(66, 24);
+            this.cbxMon.TabIndex = 7;
+            this.cbxMon.Tag = "1";
+            this.cbxMon.Text = "Mon";
+            this.cbxMon.UseVisualStyleBackColor = true;
+            this.cbxMon.CheckedChanged += new System.EventHandler(this.cbxWorkingDay_CheckedChanged);
+            // 
+            // cbxTue
+            // 
+            this.cbxTue.AutoSize = true;
+            this.cbxTue.Checked = true;
+            this.cbxTue.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbxTue.Location = new System.Drawing.Point(89, 44);
+            this.cbxTue.Name = "cbxTue";
+            this.cbxTue.Size = new System.Drawing.Size(59, 24);
+            this.cbxTue.TabIndex = 8;
+            this.cbxTue.Tag = "2";
+            this.cbxTue.Text = "Tue";
+            this.cbxTue.UseVisualStyleBackColor = true;
+            this.cbxTue.CheckedChanged += new System.EventHandler(this.cbxWorkingDay_CheckedChanged);
+            // 
+            // cbxWed
+            // 
+            this.cbxWed.AutoSize = true;
+            this.cbxWed.Checked = true;
+            this.cbxWed.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbxWed.Location = new System.Drawing.Point(154, 44);
+            this.cbxWed.Name = "cbxWed";
+            this.cbxWed.Size = new System.Drawing.Size(66, 24);
+            this.cbxWed.TabIndex = 9;
+            this.cbxWed.Tag = "3";
+            this.cbxWed.Text = "Wed";
+            this.cbxWed.UseVisualStyleBackColor = true;
+            this.cbxWed.CheckedChanged += new System.EventHandler(this.cbxWorkingDay_CheckedChanged);
+            // 
+            // gbxUser
+            // 
+            this.gbxUser.Controls.Add(this.txtID);
+            this.gbxUser.Controls.Add(this.lblID);
+            this.gbxUser.Controls.Add(this.lblPD);
+            this.gbxUser.Controls.Add(this.txtPD);
+            this.gbxUser.Location = new System.Drawing.Point(23, 12);
+            this.gbxUser.Name = "gbxUser";
+            this.gbxUser.Size = new System.Drawing.Size(291, 138);
+            this.gbxUser.TabIndex = 9;
+            this.gbxUser.TabStop = false;
+            this.gbxUser.Text = "User Info";
+            // 
+            // lblCheckIn
+            // 
+            this.lblCheckIn.AutoSize = true;
+            this.lblCheckIn.Location = new System.Drawing.Point(38, 150);
+            this.lblCheckIn.Name = "lblCheckIn";
+            this.lblCheckIn.Size = new System.Drawing.Size(0, 20);
+            this.lblCheckIn.TabIndex = 14;
+            // 
+            // lblCheckOut
+            // 
+            this.lblCheckOut.AutoSize = true;
+            this.lblCheckOut.Location = new System.Drawing.Point(285, 150);
+            this.lblCheckOut.Name = "lblCheckOut";
+            this.lblCheckOut.Size = new System.Drawing.Size(0, 20);
+            this.lblCheckOut.TabIndex = 15;
+            // 
+            // MainForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 20F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(613, 416);
+            this.Controls.Add(this.gbxUser);
+            this.Controls.Add(this.gbxAuto);
+            this.Controls.Add(this.gbxManual);
+            this.Font = new System.Drawing.Font("PMingLiU", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(136)));
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Margin = new System.Windows.Forms.Padding(4);
+            this.MaximizeBox = false;
+            this.Name = "MainForm";
+            this.Text = "Auto Check V0.7";
+            this.gbxManual.ResumeLayout(false);
+            this.gbxManual.PerformLayout();
+            this.gbxAuto.ResumeLayout(false);
+            this.gbxAuto.PerformLayout();
+            this.gbxWorkingDay.ResumeLayout(false);
+            this.gbxWorkingDay.PerformLayout();
+            this.gbxUser.ResumeLayout(false);
+            this.gbxUser.PerformLayout();
+            this.ResumeLayout(false);
+
+        }
+
+        #endregion
+
+        private System.Windows.Forms.Label lblID;
+        private System.Windows.Forms.Label lblPD;
+        private System.Windows.Forms.TextBox txtID;
+        private System.Windows.Forms.TextBox txtPD;
+        private System.Windows.Forms.Button btnCheckIn;
+        private System.Windows.Forms.Button btnCheckOut;
+        private System.Windows.Forms.Button btnAutoCheck;
+        private System.Windows.Forms.GroupBox gbxManual;
+        private System.Windows.Forms.GroupBox gbxAuto;
+        private System.Windows.Forms.GroupBox gbxUser;
+        private System.Windows.Forms.CheckBox cbxFri;
+        private System.Windows.Forms.CheckBox cbxThu;
+        private System.Windows.Forms.CheckBox cbxWed;
+        private System.Windows.Forms.CheckBox cbxTue;
+        private System.Windows.Forms.CheckBox cbxMon;
+        private System.Windows.Forms.GroupBox gbxWorkingDay;
+        private System.Windows.Forms.Label lblStatus;
+        private System.Windows.Forms.Label lblAutoStatus;
+        private System.Windows.Forms.Label lblCheckOut;
+        private System.Windows.Forms.Label lblCheckIn;
+    }
+}
+

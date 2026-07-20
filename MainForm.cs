@@ -81,7 +81,7 @@ namespace AutoCheckIn
             Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
             BackColor = theme.Window;
             ForeColor = theme.Text;
-            Text = $"Auto Check V0.7 — {theme.Name}";
+            Text = $"Auto Check V1.0 — {theme.Name}";
 
             headerPanel.BackColor = theme.Window;
             StylePanel(accountPanel, theme);

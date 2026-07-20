@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("AutoCheckIn")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("UOF automatic attendance assistant")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("CloudBox")]
 [assembly: AssemblyProduct("AutoCheckIn")]
-[assembly: AssemblyCopyright("Copyright ©Cloud Hsu  2025")]
+[assembly: AssemblyCopyright("Copyright © Cloud Hsu 2025-2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,6 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("0.7.0.0")]
-[assembly: AssemblyFileVersion("0.7.0.0")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyInformationalVersion("1.0.0")]

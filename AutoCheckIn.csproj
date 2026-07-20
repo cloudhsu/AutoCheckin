@@ -82,6 +82,12 @@
     <Compile Include="newForm3.Designer.cs">
       <DependentUpon>newForm3.cs</DependentUpon>
     </Compile>
+    <Compile Include="newForm4.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="newForm4.Designer.cs">
+      <DependentUpon>newForm4.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="UiTheme.cs" />
     <Compile Include="UiDefaults.cs" />

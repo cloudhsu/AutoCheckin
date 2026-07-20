@@ -31,7 +31,7 @@ namespace AutoCheckIn
         {
             return Task.Run(() =>
             {
-                var taskCommand = "\\\"" + m_executablePath + "\\\"";
+                var taskCommand = "\\\"" + m_executablePath + "\\\" -a";
                 var command = Run(
                     $"/Create /TN \"{TaskName}\" /SC ONLOGON /TR \"{taskCommand}\" /RL LIMITED /F");
                 return command.ExitCode == 0

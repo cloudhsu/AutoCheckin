@@ -12,6 +12,7 @@ namespace AutoCheckIn
         private readonly IAutoCheckScheduler m_dailyCheck;
         private readonly ICredentialStore m_credentialStore;
         private readonly IStartupTaskService m_startupTaskService;
+        private readonly bool m_autoStart;
         private readonly CancellationTokenSource m_formCancellation = new CancellationTokenSource();
         private readonly System.Windows.Forms.Timer m_timer;
         private readonly NotifyIcon m_trayIcon;
@@ -23,7 +24,8 @@ namespace AutoCheckIn
                 new DailyCheck(new CredentialSavingUofClient(new CrackClient(), new DpapiCredentialStore())),
                 new DpapiCredentialStore(),
                 new WindowsStartupTaskService(),
-                UiTheme.Amber)
+                UiTheme.Amber,
+                false)
         {
             // Required by the WinForms designer. Program.cs is the runtime
             // composition root and uses the injectable constructor below.
@@ -34,12 +36,14 @@ namespace AutoCheckIn
             IAutoCheckScheduler dailyCheck,
             ICredentialStore credentialStore,
             IStartupTaskService startupTaskService,
-            UiTheme theme)
+            UiTheme theme,
+            bool autoStart)
         {
             m_uofClient = uofClient ?? throw new ArgumentNullException(nameof(uofClient));
             m_dailyCheck = dailyCheck ?? throw new ArgumentNullException(nameof(dailyCheck));
             m_credentialStore = credentialStore ?? throw new ArgumentNullException(nameof(credentialStore));
             m_startupTaskService = startupTaskService ?? throw new ArgumentNullException(nameof(startupTaskService));
+            m_autoStart = autoStart;
             Icon = Properties.Resources.cloudbox;
             ShowIcon = true;
             ApplyTheme(theme ?? UiTheme.Amber);
@@ -81,7 +85,7 @@ namespace AutoCheckIn
             Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
             BackColor = theme.Window;
             ForeColor = theme.Text;
-            Text = $"Auto Check V1.0 — {theme.Name}";
+            Text = $"Auto Check V1.1 — {theme.Name}";
 
             headerPanel.BackColor = theme.Window;
             StylePanel(accountPanel, theme);
@@ -118,6 +122,22 @@ namespace AutoCheckIn
         private async void MainForm_Shown(object sender, EventArgs e)
         {
             await RefreshStartupTaskStatusAsync();
+            if (m_autoStart)
+            {
+                StartAutomaticCheckFromCommandLine();
+            }
+        }
+
+        private void StartAutomaticCheckFromCommandLine()
+        {
+            if (string.IsNullOrWhiteSpace(idTextBox.Text) || string.IsNullOrEmpty(passwordTextBox.Text))
+            {
+                statusLabel.Text = "Auto start skipped: no saved credentials were found.";
+                return;
+            }
+
+            StartAutomaticCheck(idTextBox.Text, passwordTextBox.Text);
+            statusLabel.Text = "Auto check started by the -a command-line option.";
         }
 
         private async void CreateStartupButton_Click(object sender, EventArgs e)
@@ -146,7 +166,8 @@ namespace AutoCheckIn
         private void ShowStartupResult(TaskScheduleResult result)
         {
             startupStatusLabel.Text = result.Message;
-            createStartupButton.Enabled = !result.Exists;
+            createStartupButton.Text = result.Exists ? "UPDATE" : "ADD";
+            createStartupButton.Enabled = true;
             deleteStartupButton.Enabled = result.Exists;
         }
 
@@ -278,6 +299,11 @@ namespace AutoCheckIn
                 return;
             }
 
+            StartAutomaticCheck(loginId, password);
+        }
+
+        private void StartAutomaticCheck(string loginId, string password)
+        {
             idTextBox.Enabled = false;
             passwordTextBox.Enabled = false;
             checkInButton.Enabled = false;

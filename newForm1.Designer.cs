@@ -3,33 +3,33 @@ namespace AutoCheckIn
     partial class newForm1
     {
         private System.ComponentModel.IContainer components = null;
-        private System.Windows.Forms.Panel headerPanel;
+        protected System.Windows.Forms.Panel headerPanel;
         private System.Windows.Forms.Label titleLabel;
         private System.Windows.Forms.Label subtitleLabel;
-        private System.Windows.Forms.Panel accountPanel;
+        protected System.Windows.Forms.Panel accountPanel;
         private System.Windows.Forms.Label accountTitle;
         private System.Windows.Forms.Label idLabel;
-        private System.Windows.Forms.TextBox idTextBox;
+        protected System.Windows.Forms.TextBox idTextBox;
         private System.Windows.Forms.Label passwordLabel;
-        private System.Windows.Forms.TextBox passwordTextBox;
-        private System.Windows.Forms.Panel manualPanel;
+        protected System.Windows.Forms.TextBox passwordTextBox;
+        protected System.Windows.Forms.Panel manualPanel;
         private System.Windows.Forms.Label manualTitle;
-        private System.Windows.Forms.Button checkInButton;
-        private System.Windows.Forms.Button checkOutButton;
-        private System.Windows.Forms.Panel schedulePanel;
+        protected System.Windows.Forms.Button checkInButton;
+        protected System.Windows.Forms.Button checkOutButton;
+        protected System.Windows.Forms.Panel schedulePanel;
         private System.Windows.Forms.Label scheduleTitle;
         private System.Windows.Forms.Label workingDaysLabel;
-        private System.Windows.Forms.CheckBox monCheckBox;
-        private System.Windows.Forms.CheckBox tueCheckBox;
-        private System.Windows.Forms.CheckBox wedCheckBox;
-        private System.Windows.Forms.CheckBox thuCheckBox;
-        private System.Windows.Forms.CheckBox friCheckBox;
-        private System.Windows.Forms.Label checkInTimeLabel;
-        private System.Windows.Forms.Label checkOutTimeLabel;
-        private System.Windows.Forms.Button autoCheckButton;
-        private System.Windows.Forms.Panel statusPanel;
+        protected System.Windows.Forms.CheckBox monCheckBox;
+        protected System.Windows.Forms.CheckBox tueCheckBox;
+        protected System.Windows.Forms.CheckBox wedCheckBox;
+        protected System.Windows.Forms.CheckBox thuCheckBox;
+        protected System.Windows.Forms.CheckBox friCheckBox;
+        protected System.Windows.Forms.Label checkInTimeLabel;
+        protected System.Windows.Forms.Label checkOutTimeLabel;
+        protected System.Windows.Forms.Button autoCheckButton;
+        protected System.Windows.Forms.Panel statusPanel;
         private System.Windows.Forms.Label statusDot;
-        private System.Windows.Forms.Label statusLabel;
+        protected System.Windows.Forms.Label statusLabel;
 
         protected override void Dispose(bool disposing)
         {
@@ -120,7 +120,6 @@ namespace AutoCheckIn
             this.idTextBox.ForeColor = System.Drawing.Color.White;
             this.idTextBox.Location = new System.Drawing.Point(26, 84);
             this.idTextBox.Size = new System.Drawing.Size(313, 32);
-            this.idTextBox.Text = "EMPLOYEE01";
             // passwordLabel
             this.passwordLabel.AutoSize = true;
             this.passwordLabel.ForeColor = System.Drawing.Color.FromArgb(181, 199, 200);
@@ -134,7 +133,6 @@ namespace AutoCheckIn
             this.passwordTextBox.Location = new System.Drawing.Point(26, 151);
             this.passwordTextBox.PasswordChar = '●';
             this.passwordTextBox.Size = new System.Drawing.Size(313, 32);
-            this.passwordTextBox.Text = "password";
             // manualPanel
             this.manualPanel.BackColor = System.Drawing.Color.FromArgb(43, 58, 66);
             this.manualPanel.Controls.Add(this.manualTitle);
@@ -194,11 +192,11 @@ namespace AutoCheckIn
             this.workingDaysLabel.Location = new System.Drawing.Point(23, 57);
             this.workingDaysLabel.Text = "Working days";
             // weekday checkboxes
-            this.monCheckBox.Location = new System.Drawing.Point(26, 84); this.monCheckBox.Text = "Mon";
-            this.tueCheckBox.Location = new System.Drawing.Point(91, 84); this.tueCheckBox.Text = "Tue";
-            this.wedCheckBox.Location = new System.Drawing.Point(156, 84); this.wedCheckBox.Text = "Wed";
-            this.thuCheckBox.Location = new System.Drawing.Point(226, 84); this.thuCheckBox.Text = "Thu";
-            this.friCheckBox.Location = new System.Drawing.Point(291, 84); this.friCheckBox.Text = "Fri";
+            this.monCheckBox.Location = new System.Drawing.Point(26, 84); this.monCheckBox.Tag = "1"; this.monCheckBox.Text = "Mon";
+            this.tueCheckBox.Location = new System.Drawing.Point(91, 84); this.tueCheckBox.Tag = "2"; this.tueCheckBox.Text = "Tue";
+            this.wedCheckBox.Location = new System.Drawing.Point(156, 84); this.wedCheckBox.Tag = "3"; this.wedCheckBox.Text = "Wed";
+            this.thuCheckBox.Location = new System.Drawing.Point(226, 84); this.thuCheckBox.Tag = "4"; this.thuCheckBox.Text = "Thu";
+            this.friCheckBox.Location = new System.Drawing.Point(291, 84); this.friCheckBox.Tag = "5"; this.friCheckBox.Text = "Fri";
             this.monCheckBox.AutoSize = true; this.monCheckBox.Checked = true; this.monCheckBox.ForeColor = System.Drawing.Color.FromArgb(218, 232, 232);
             this.tueCheckBox.AutoSize = true; this.tueCheckBox.Checked = true; this.tueCheckBox.ForeColor = System.Drawing.Color.FromArgb(218, 232, 232);
             this.wedCheckBox.AutoSize = true; this.wedCheckBox.Checked = true; this.wedCheckBox.ForeColor = System.Drawing.Color.FromArgb(218, 232, 232);

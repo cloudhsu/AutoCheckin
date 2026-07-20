@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace AutoCheckIn
 {
-    public partial class MainForm : Form
+    public partial class MainForm : newForm1
     {
         private readonly IUofClient m_uofClient;
         private readonly IAutoCheckScheduler m_dailyCheck;
@@ -26,11 +26,18 @@ namespace AutoCheckIn
         {
             m_uofClient = uofClient ?? throw new ArgumentNullException(nameof(uofClient));
             m_dailyCheck = dailyCheck ?? throw new ArgumentNullException(nameof(dailyCheck));
-            InitializeComponent();
-
             Icon = Properties.Resources.cloudbox;
             ShowIcon = true;
             ApplyTheme(theme ?? UiTheme.Amber);
+
+            checkInButton.Click += btnCheckIn_Click;
+            checkOutButton.Click += btnCheckOut_Click;
+            autoCheckButton.Click += btnAutoCheck_Click;
+            monCheckBox.CheckedChanged += cbxWorkingDay_CheckedChanged;
+            tueCheckBox.CheckedChanged += cbxWorkingDay_CheckedChanged;
+            wedCheckBox.CheckedChanged += cbxWorkingDay_CheckedChanged;
+            thuCheckBox.CheckedChanged += cbxWorkingDay_CheckedChanged;
+            friCheckBox.CheckedChanged += cbxWorkingDay_CheckedChanged;
 
             m_timer = new System.Windows.Forms.Timer { Interval = 100 };
             m_timer.Tick += Timer_Tick;
@@ -57,30 +64,29 @@ namespace AutoCheckIn
             ForeColor = theme.Text;
             Text = $"Auto Check V0.7 — {theme.Name}";
 
-            StyleGroup(gbxUser, theme);
-            StyleGroup(gbxManual, theme);
-            StyleGroup(gbxAuto, theme);
-            StyleGroup(gbxWorkingDay, theme);
-            StyleTextBox(txtID, theme);
-            StyleTextBox(txtPD, theme);
-            StylePrimaryButton(btnCheckIn, theme);
-            StyleSecondaryButton(btnCheckOut, theme);
-            StylePrimaryButton(btnAutoCheck, theme);
-
-            lblStatus.ForeColor = theme.MutedText;
-            lblAutoStatus.ForeColor = theme.MutedText;
-            lblCheckIn.ForeColor = theme.Accent;
-            lblCheckOut.ForeColor = theme.Accent;
+            headerPanel.BackColor = theme.Window;
+            StylePanel(accountPanel, theme);
+            StylePanel(manualPanel, theme);
+            StylePanel(schedulePanel, theme);
+            statusPanel.BackColor = theme.Window;
+            StyleTextBox(idTextBox, theme);
+            StyleTextBox(passwordTextBox, theme);
+            StylePrimaryButton(checkInButton, theme);
+            StyleSecondaryButton(checkOutButton, theme);
+            StylePrimaryButton(autoCheckButton, theme);
+            statusLabel.ForeColor = theme.MutedText;
+            checkInTimeLabel.ForeColor = theme.Accent;
+            checkOutTimeLabel.ForeColor = theme.Accent;
         }
 
-        private static void StyleGroup(GroupBox group, UiTheme theme)
+        private static void StylePanel(Panel panel, UiTheme theme)
         {
-            group.BackColor = theme.Surface;
-            group.ForeColor = theme.Text;
-            foreach (Control child in group.Controls)
+            panel.BackColor = theme.Surface;
+            panel.ForeColor = theme.Text;
+            foreach (Control child in panel.Controls)
             {
                 child.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
-                if (!(child is TextBox) && !(child is Button) && !(child is GroupBox))
+                if (!(child is TextBox) && !(child is Button))
                 {
                     child.ForeColor = theme.Text;
                 }
@@ -157,9 +163,12 @@ namespace AutoCheckIn
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            lblAutoStatus.Text = m_dailyCheck.StatusMessage;
-            lblCheckIn.Text = m_dailyCheck.CheckInMessage;
-            lblCheckOut.Text = m_dailyCheck.CheckOutMessage;
+            if (!string.IsNullOrEmpty(m_dailyCheck.StatusMessage))
+            {
+                statusLabel.Text = m_dailyCheck.StatusMessage;
+            }
+            checkInTimeLabel.Text = m_dailyCheck.CheckInMessage;
+            checkOutTimeLabel.Text = m_dailyCheck.CheckOutMessage;
         }
 
         private async void btnCheckIn_Click(object sender, EventArgs e)
@@ -174,13 +183,13 @@ namespace AutoCheckIn
 
         private void btnAutoCheck_Click(object sender, EventArgs e)
         {
-            if (btnAutoCheck.Text == "Stop")
+            if (autoCheckButton.Text == "Stop")
             {
-                txtID.Enabled = true;
-                txtPD.Enabled = true;
-                btnCheckIn.Enabled = true;
-                btnCheckOut.Enabled = true;
-                btnAutoCheck.Text = "Auto Check";
+                idTextBox.Enabled = true;
+                passwordTextBox.Enabled = true;
+                checkInButton.Enabled = true;
+                checkOutButton.Enabled = true;
+                autoCheckButton.Text = "START AUTO CHECK";
                 m_dailyCheck.Stop();
                 return;
             }
@@ -192,11 +201,11 @@ namespace AutoCheckIn
                 return;
             }
 
-            txtID.Enabled = false;
-            txtPD.Enabled = false;
-            btnCheckIn.Enabled = false;
-            btnCheckOut.Enabled = false;
-            btnAutoCheck.Text = "Stop";
+            idTextBox.Enabled = false;
+            passwordTextBox.Enabled = false;
+            checkInButton.Enabled = false;
+            checkOutButton.Enabled = false;
+            autoCheckButton.Text = "Stop";
             m_dailyCheck.Start(loginId, password);
         }
 
@@ -220,18 +229,18 @@ namespace AutoCheckIn
             }
 
             SetActionButtonsEnabled(false);
-            lblStatus.Text = $"{action} in progress...";
+            statusLabel.Text = $"{action} in progress...";
             try
             {
                 var result = await m_uofClient.CheckAsync(
                     loginId, password, action, m_formCancellation.Token);
-                lblStatus.Text = result.Message;
+                statusLabel.Text = result.Message;
             }
             catch (Exception ex)
             {
                 // Keep the UI boundary safe even if an alternate IUofClient throws.
                 Console.WriteLine("Unexpected manual check error: " + ex);
-                lblStatus.Text = "Unexpected check error: " + ex.Message;
+                statusLabel.Text = "Unexpected check error: " + ex.Message;
             }
             finally
             {
@@ -244,8 +253,8 @@ namespace AutoCheckIn
 
         private bool TryGetCredentials(out string loginId, out string password)
         {
-            loginId = txtID.Text;
-            password = txtPD.Text;
+            loginId = idTextBox.Text;
+            password = passwordTextBox.Text;
 
             if (string.IsNullOrWhiteSpace(loginId))
             {
@@ -264,9 +273,9 @@ namespace AutoCheckIn
 
         private void SetActionButtonsEnabled(bool enabled)
         {
-            btnCheckIn.Enabled = enabled;
-            btnCheckOut.Enabled = enabled;
-            btnAutoCheck.Enabled = enabled;
+            checkInButton.Enabled = enabled;
+            checkOutButton.Enabled = enabled;
+            autoCheckButton.Enabled = enabled;
         }
     }
 }

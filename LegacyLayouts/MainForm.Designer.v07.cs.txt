@@ -1,5 +1,6 @@
 ﻿namespace AutoCheckIn
 {
+    // Archived original MainForm layout (v0.7). This file is intentionally not compiled.
     partial class MainForm
     {
         /// <summary>

@@ -35,7 +35,7 @@ namespace AutoCheckIn
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Check succeeded but credentials could not be saved: " + ex.Message);
+                ErrorLogger.Log("Credential save", ex);
                 return CheckResult.Success(result.Message + " (Credentials could not be saved.)");
             }
         }

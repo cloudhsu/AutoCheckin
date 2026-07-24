@@ -23,6 +23,7 @@ namespace AutoCheckIn
         public Color Accent { get; }
         public Color Text { get; }
         public Color MutedText { get; }
+        public static UiTheme Blue => Themes[1];
         public static UiTheme Amber => Themes[2];
         public static UiTheme Random() => Themes[new Random().Next(Themes.Length)];
     }

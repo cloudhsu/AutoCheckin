@@ -16,15 +16,17 @@ namespace AutoCheckIn
             m_executablePath = Path.GetFullPath(Application.ExecutablePath);
         }
 
-        public Task<TaskScheduleResult> GetStatusAsync()
+        public TaskScheduleResult GetStatus()
         {
-            return Task.Run(() =>
+            var command = Run($"/Query /TN \"{TaskName}\"");
+            if (command.ExitCode != 0 && !IsTaskMissing(command.Output))
             {
-                var command = Run($"/Query /TN \"{TaskName}\"");
-                return command.ExitCode == 0
-                    ? new TaskScheduleResult(true, true, "Windows startup task is enabled.")
-                    : new TaskScheduleResult(true, false, "Windows startup task is not configured.");
-            });
+                ErrorLogger.Log("Windows Task Scheduler status", CleanError(command.Output));
+            }
+
+            return command.ExitCode == 0
+                ? new TaskScheduleResult(true, true, "Windows startup task is enabled.")
+                : new TaskScheduleResult(true, false, "Windows startup task is not configured.");
         }
 
         public Task<TaskScheduleResult> CreateAsync()
@@ -34,6 +36,11 @@ namespace AutoCheckIn
                 var taskCommand = "\\\"" + m_executablePath + "\\\" -a";
                 var command = Run(
                     $"/Create /TN \"{TaskName}\" /SC ONLOGON /TR \"{taskCommand}\" /RL LIMITED /F");
+                if (command.ExitCode != 0)
+                {
+                    ErrorLogger.Log("Windows Task Scheduler create", CleanError(command.Output));
+                }
+
                 return command.ExitCode == 0
                     ? new TaskScheduleResult(true, true, "Windows startup task was created.")
                     : new TaskScheduleResult(false, false, CleanError(command.Output));
@@ -45,6 +52,11 @@ namespace AutoCheckIn
             return Task.Run(() =>
             {
                 var command = Run($"/Delete /TN \"{TaskName}\" /F");
+                if (command.ExitCode != 0)
+                {
+                    ErrorLogger.Log("Windows Task Scheduler delete", CleanError(command.Output));
+                }
+
                 return command.ExitCode == 0
                     ? new TaskScheduleResult(true, false, "Windows startup task was removed.")
                     : new TaskScheduleResult(false, true, CleanError(command.Output));
@@ -80,6 +92,7 @@ namespace AutoCheckIn
             }
             catch (Exception ex)
             {
+                ErrorLogger.Log("Windows Task Scheduler", ex);
                 return new CommandResult(-1, ex.Message);
             }
         }
@@ -89,6 +102,13 @@ namespace AutoCheckIn
             return string.IsNullOrWhiteSpace(output)
                 ? "Windows Task Scheduler operation failed."
                 : output.Trim();
+        }
+
+        private static bool IsTaskMissing(string output)
+        {
+            return !string.IsNullOrEmpty(output) &&
+                (output.IndexOf("cannot find", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 output.IndexOf("找不到", StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         private sealed class CommandResult

@@ -92,7 +92,7 @@ namespace AutoCheckIn
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unexpected UOF error: " + ex);
+                ErrorLogger.Log("UOF client", ex);
                 return CheckResult.Failure("UOF operation failed: " + ex.Message);
             }
         }

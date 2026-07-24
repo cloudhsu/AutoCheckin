@@ -60,6 +60,7 @@
     <Compile Include="CrackClient.cs" />
     <Compile Include="DailyCheck.cs" />
     <Compile Include="DpapiCredentialStore.cs" />
+    <Compile Include="ErrorLogger.cs" />
     <Compile Include="IAutoCheckScheduler.cs" />
     <Compile Include="ICredentialStore.cs" />
     <Compile Include="IStartupTaskService.cs" />

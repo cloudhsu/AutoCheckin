@@ -43,7 +43,7 @@ namespace AutoCheckIn
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unable to load saved credentials: " + ex.Message);
+                ErrorLogger.Log("Credential load", ex);
                 return null;
             }
         }

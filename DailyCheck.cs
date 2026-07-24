@@ -125,7 +125,7 @@ namespace AutoCheckIn
                 catch (Exception ex)
                 {
                     // Last line of defence: a scheduler failure must never terminate the process.
-                    Console.WriteLine("Unexpected scheduler error: " + ex);
+                    ErrorLogger.Log("Automatic check scheduler", ex);
                     SetStatus("Auto check error: " + ex.Message);
                 }
 

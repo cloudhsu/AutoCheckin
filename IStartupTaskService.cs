@@ -4,7 +4,7 @@ namespace AutoCheckIn
 {
     internal interface IStartupTaskService
     {
-        Task<TaskScheduleResult> GetStatusAsync();
+        TaskScheduleResult GetStatus();
         Task<TaskScheduleResult> CreateAsync();
         Task<TaskScheduleResult> DeleteAsync();
     }

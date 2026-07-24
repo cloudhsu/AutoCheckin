@@ -17,6 +17,8 @@ namespace AutoCheckIn
         private readonly System.Windows.Forms.Timer m_timer;
         private readonly NotifyIcon m_trayIcon;
         private readonly ContextMenuStrip m_trayMenu;
+        private bool m_startupStatusChecked;
+        private bool m_isClosing;
 
         public MainForm()
             : this(
@@ -24,7 +26,7 @@ namespace AutoCheckIn
                 new DailyCheck(new CredentialSavingUofClient(new CrackClient(), new DpapiCredentialStore())),
                 new DpapiCredentialStore(),
                 new WindowsStartupTaskService(),
-                UiTheme.Amber,
+                UiTheme.Blue,
                 false)
         {
             // Required by the WinForms designer. Program.cs is the runtime
@@ -46,7 +48,7 @@ namespace AutoCheckIn
             m_autoStart = autoStart;
             Icon = Properties.Resources.cloudbox;
             ShowIcon = true;
-            ApplyTheme(theme ?? UiTheme.Amber);
+            ApplyTheme(theme ?? UiTheme.Blue);
 
             checkInButton.Click += btnCheckIn_Click;
             checkOutButton.Click += btnCheckOut_Click;
@@ -119,9 +121,9 @@ namespace AutoCheckIn
             statusLabel.Text = "Saved credentials loaded securely.";
         }
 
-        private async void MainForm_Shown(object sender, EventArgs e)
+        private void MainForm_Shown(object sender, EventArgs e)
         {
-            await RefreshStartupTaskStatusAsync();
+            CheckStartupTaskStatusOnce();
             if (m_autoStart)
             {
                 StartAutomaticCheckFromCommandLine();
@@ -145,7 +147,10 @@ namespace AutoCheckIn
             SetStartupButtonsEnabled(false);
             startupStatusLabel.Text = "Creating Windows startup task...";
             var result = await m_startupTaskService.CreateAsync();
-            ShowStartupResult(result);
+            if (!m_isClosing && !IsDisposed)
+            {
+                ShowStartupResult(result);
+            }
         }
 
         private async void DeleteStartupButton_Click(object sender, EventArgs e)
@@ -153,13 +158,22 @@ namespace AutoCheckIn
             SetStartupButtonsEnabled(false);
             startupStatusLabel.Text = "Removing Windows startup task...";
             var result = await m_startupTaskService.DeleteAsync();
-            ShowStartupResult(result);
+            if (!m_isClosing && !IsDisposed)
+            {
+                ShowStartupResult(result);
+            }
         }
 
-        private async Task RefreshStartupTaskStatusAsync()
+        private void CheckStartupTaskStatusOnce()
         {
+            if (m_startupStatusChecked)
+            {
+                return;
+            }
+
+            m_startupStatusChecked = true;
             SetStartupButtonsEnabled(false);
-            var result = await m_startupTaskService.GetStatusAsync();
+            var result = m_startupTaskService.GetStatus();
             ShowStartupResult(result);
         }
 
@@ -231,21 +245,42 @@ namespace AutoCheckIn
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            var result = MessageBox.Show(
-                "Do you want to exit?", "Confirm Exit", MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
-
-            if (result == DialogResult.No)
+            if (e.CloseReason == CloseReason.UserClosing)
             {
-                e.Cancel = true;
-                return;
+                var result = MessageBox.Show(
+                    "Do you want to exit?", "Confirm Exit", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+
+                if (result == DialogResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
             }
 
-            m_formCancellation.Cancel();
-            m_dailyCheck.Dispose();
-            m_timer.Stop();
-            m_trayIcon.Visible = false;
+            m_isClosing = true;
+            try
+            {
+                m_formCancellation.Cancel();
+                m_timer.Stop();
+                m_dailyCheck.Dispose();
+                m_trayIcon.Visible = false;
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.Log("MainForm shutdown", ex);
+            }
+
             base.OnFormClosing(e);
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            m_timer.Dispose();
+            m_trayIcon.Dispose();
+            m_trayMenu.Dispose();
+            m_formCancellation.Dispose();
+            base.OnFormClosed(e);
         }
 
         private void OnOpen(object sender, EventArgs e) => ShowMainWindow();
@@ -337,17 +372,23 @@ namespace AutoCheckIn
             {
                 var result = await m_uofClient.CheckAsync(
                     loginId, password, action, m_formCancellation.Token);
-                statusLabel.Text = result.Message;
+                if (!m_isClosing && !IsDisposed)
+                {
+                    statusLabel.Text = result.Message;
+                }
             }
             catch (Exception ex)
             {
                 // Keep the UI boundary safe even if an alternate IUofClient throws.
-                Console.WriteLine("Unexpected manual check error: " + ex);
-                statusLabel.Text = "Unexpected check error: " + ex.Message;
+                ErrorLogger.Log("Manual check", ex);
+                if (!m_isClosing && !IsDisposed)
+                {
+                    statusLabel.Text = "Unexpected check error: " + ex.Message;
+                }
             }
             finally
             {
-                if (!IsDisposed)
+                if (!m_isClosing && !IsDisposed)
                 {
                     SetActionButtonsEnabled(true);
                 }

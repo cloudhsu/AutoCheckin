@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AutoCheckIn
@@ -12,6 +13,20 @@ namespace AutoCheckIn
         [STAThread]
         static void Main()
         {
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += (sender, args) =>
+                ErrorLogger.Log("Application.ThreadException", args.Exception);
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+                ErrorLogger.Log(
+                    "AppDomain.UnhandledException; terminating=" + args.IsTerminating,
+                    args.ExceptionObject as Exception ??
+                    new Exception(args.ExceptionObject?.ToString() ?? "Unknown unhandled exception."));
+            TaskScheduler.UnobservedTaskException += (sender, args) =>
+            {
+                ErrorLogger.Log("TaskScheduler.UnobservedTaskException", args.Exception);
+                args.SetObserved();
+            };
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             var autoStart = Environment.GetCommandLineArgs()
@@ -23,7 +38,7 @@ namespace AutoCheckIn
                 new DailyCheck(new CredentialSavingUofClient(new CrackClient(), credentialStore)),
                 credentialStore,
                 new WindowsStartupTaskService(),
-                UiTheme.Random(),
+                UiTheme.Blue,
                 autoStart));
         }
     }

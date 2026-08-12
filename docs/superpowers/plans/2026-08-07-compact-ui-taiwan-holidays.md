@@ -228,7 +228,7 @@ git commit -m "Cache official Taiwan holiday calendars"
 - Produces: `bool AutomaticWorkdayPolicy.IsEligible(DateTime date, bool weekdaySelected, HolidayCalendarResult calendar)`.
 - Changes constructor to `DailyCheck(IUofClient uofClient, ITaiwanHolidayProvider holidayProvider)`.
 
-- [ ] **Step 1: Add failing policy tests**
+- [x] **Step 1: Add failing policy tests**
 
 Add these exact assertions:
 
@@ -244,13 +244,13 @@ AssertTrue(AutomaticWorkdayPolicy.IsEligible(holiday, true, unavailable), "weekd
 
 Add a fake provider that records requested years. Exercise an internal `DailyCheck.EnsureHolidayCalendarAsync(DateTime, CancellationToken)` twice in 2026 and once in 2027; assert requests are exactly `2026, 2027`.
 
-- [ ] **Step 2: Run tests to verify policy and scheduler integration fail**
+- [x] **Step 2: Run tests to verify policy and scheduler integration fail**
 
 Run the Debug rebuild and test executable.
 
 Expected: compilation fails because `AutomaticWorkdayPolicy`, the new constructor, and `EnsureHolidayCalendarAsync` do not exist.
 
-- [ ] **Step 3: Implement the pure rule and yearly scheduler loading**
+- [x] **Step 3: Implement the pure rule and yearly scheduler loading**
 
 Implement the policy exactly:
 
@@ -276,13 +276,13 @@ var scheduler = new DailyCheck(
     new CredentialSavingUofClient(new CrackClient(), credentialStore), holidayProvider);
 ```
 
-- [ ] **Step 4: Rebuild and run all automated tests**
+- [x] **Step 4: Rebuild and run all automated tests**
 
 Run the Debug rebuild and test executable.
 
 Expected: all parser, provider, policy, and yearly-load cases print `PASS`; process exits `0`.
 
-- [ ] **Step 5: Commit scheduler holiday awareness**
+- [x] **Step 5: Commit scheduler holiday awareness**
 
 ```powershell
 git add AutomaticWorkdayPolicy.cs DailyCheck.cs Program.cs MainForm.cs AutoCheckIn.Tests/Program.cs AutoCheckIn.csproj

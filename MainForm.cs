@@ -19,6 +19,12 @@ namespace AutoCheckIn
         private readonly ContextMenuStrip m_trayMenu;
         private bool m_startupStatusChecked;
         private bool m_isClosing;
+        private bool m_hasNotifiedFailureStreak;
+
+        // Failures are silent otherwise -- for an unattended auto check-in tool,
+        // a run of failures (e.g. UOF is down, or the page format changed) must
+        // surface proactively rather than only updating a label nobody is looking at.
+        private const int FailureNotificationThreshold = 3;
 
         public MainForm()
             : this(
@@ -63,6 +69,7 @@ namespace AutoCheckIn
             Shown += MainForm_Shown;
 
             LoadSavedCredentials();
+            LoadSavedWorkdays();
 
             m_timer = new System.Windows.Forms.Timer { Interval = 100 };
             m_timer.Tick += Timer_Tick;
@@ -119,6 +126,23 @@ namespace AutoCheckIn
             idTextBox.Text = credentials.LoginId;
             passwordTextBox.Text = credentials.Password;
             statusLabel.Text = "Saved credentials loaded securely.";
+        }
+
+        private void LoadSavedWorkdays()
+        {
+            var saved = WorkdaySettings.Load();
+            if (saved == null)
+            {
+                return; // No saved file yet; keep the designer defaults (Mon-Fri checked).
+            }
+
+            // Setting Checked raises CheckedChanged, which already calls
+            // m_dailyCheck.SetWorkingDay for each box -- no separate wiring needed.
+            monCheckBox.Checked = saved[0];
+            tueCheckBox.Checked = saved[1];
+            wedCheckBox.Checked = saved[2];
+            thuCheckBox.Checked = saved[3];
+            friCheckBox.Checked = saved[4];
         }
 
         private void MainForm_Shown(object sender, EventArgs e)
@@ -302,6 +326,32 @@ namespace AutoCheckIn
             }
             checkInTimeLabel.Text = m_dailyCheck.CheckInMessage;
             checkOutTimeLabel.Text = m_dailyCheck.CheckOutMessage;
+
+            NotifyOnFailureStreak();
+        }
+
+        private void NotifyOnFailureStreak()
+        {
+            var failures = m_dailyCheck.ConsecutiveFailures;
+            if (failures == 0)
+            {
+                m_hasNotifiedFailureStreak = false;
+                return;
+            }
+
+            // Only balloon-notify when the tray icon is already visible (the app is
+            // minimized/hidden) -- if the window is open in the foreground the status
+            // label already shows the same failure message. Notify once per streak
+            // (not once per 5-minute retry) so a prolonged outage does not spam.
+            if (failures >= FailureNotificationThreshold && !m_hasNotifiedFailureStreak && m_trayIcon.Visible)
+            {
+                m_hasNotifiedFailureStreak = true;
+                m_trayIcon.ShowBalloonTip(
+                    10000,
+                    "Auto check-in is failing",
+                    $"{failures} attempts in a row have failed: {m_dailyCheck.StatusMessage}",
+                    ToolTipIcon.Warning);
+            }
         }
 
         private async void btnCheckIn_Click(object sender, EventArgs e)
@@ -355,6 +405,15 @@ namespace AutoCheckIn
             {
                 m_dailyCheck.SetWorkingDay((DayOfWeek)day, box.Checked);
             }
+
+            WorkdaySettings.Save(new[]
+            {
+                monCheckBox.Checked,
+                tueCheckBox.Checked,
+                wedCheckBox.Checked,
+                thuCheckBox.Checked,
+                friCheckBox.Checked
+            });
         }
 
         private async Task RunManualCheckAsync(CheckAction action)

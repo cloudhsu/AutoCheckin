@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -95,6 +96,125 @@ namespace AutoCheckIn
                 ErrorLogger.Log("UOF client", ex);
                 return CheckResult.Failure("UOF operation failed: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Read-only probe: logs in and reads Homepage.aspx, then reports whether
+        /// the site's structure still matches what PopulateCheckForm/SubmitCheckAsync
+        /// hardcode. This method never calls PopulateCheckForm or SubmitCheckAsync,
+        /// so it never submits a check-in/check-out action and leaves no attendance
+        /// record -- safe to run at any time to check for site drift.
+        /// </summary>
+        public async Task<string> DiagnoseLoginAsync(
+            string loginId, string password, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var report = new StringBuilder();
+            report.AppendLine("AutoCheckIn UOF login diagnostic -- " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            report.AppendLine("Read-only: logs in and reads the homepage only. Never submits a");
+            report.AppendLine("check-in/check-out action -- no attendance record is created by this.");
+            report.AppendLine();
+
+            if (string.IsNullOrWhiteSpace(loginId) || string.IsNullOrEmpty(password))
+            {
+                report.AppendLine("FAILED: ID and password are required.");
+                return report.ToString();
+            }
+
+            try
+            {
+                using (var handler = CreateHandler())
+                using (var client = CreateClient(handler))
+                {
+                    var loginPage = await GetTextAsync(client, LoginUrl, cancellationToken).ConfigureAwait(false);
+                    if (!loginPage.Succeeded)
+                    {
+                        report.AppendLine("FAILED at login page fetch: " + loginPage.Result.Message);
+                        return report.ToString();
+                    }
+                    report.AppendLine("OK: fetched login page (" + loginPage.Content.Length + " bytes).");
+
+                    var tokens = ReadLoginTokens(loginPage.Content);
+                    if (tokens == null)
+                    {
+                        report.AppendLine("FAILED: __VIEWSTATE/__VIEWSTATEGENERATOR not found -- login page format has likely changed.");
+                        return report.ToString();
+                    }
+                    report.AppendLine("OK: found __VIEWSTATE and __VIEWSTATEGENERATOR tokens.");
+
+                    var loginResult = await LoginAsync(client, loginId, password, tokens, cancellationToken).ConfigureAwait(false);
+                    if (!loginResult.Succeeded)
+                    {
+                        report.AppendLine("FAILED at login POST: " + loginResult.Result.Message);
+                        return report.ToString();
+                    }
+
+                    if (loginResult.Content.IndexOf("Authentication.aspx", StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        report.AppendLine("FAILED: login response did not redirect to Authentication.aspx -- check ID/password, or the site's login-success marker changed.");
+                        return report.ToString();
+                    }
+                    report.AppendLine("OK: login succeeded (Authentication.aspx marker found).");
+
+                    var authentication = await GetTextAsync(client, AuthenticationUrl, cancellationToken).ConfigureAwait(false);
+                    if (!authentication.Succeeded)
+                    {
+                        report.AppendLine("FAILED at Authentication.aspx fetch: " + authentication.Result.Message);
+                        return report.ToString();
+                    }
+                    report.AppendLine("OK: fetched Authentication.aspx.");
+
+                    var homePage = await GetTextAsync(client, HomePageUrl, cancellationToken).ConfigureAwait(false);
+                    if (!homePage.Succeeded)
+                    {
+                        report.AppendLine("FAILED at Homepage.aspx fetch: " + homePage.Result.Message);
+                        return report.ToString();
+                    }
+                    report.AppendLine("OK: fetched Homepage.aspx (" + homePage.Content.Length + " bytes).");
+
+                    var form = ReadHiddenFields(homePage.Content);
+                    if (form == null)
+                    {
+                        report.AppendLine("FAILED: no hidden <input> fields found on Homepage.aspx -- page structure has likely changed.");
+                        return report.ToString();
+                    }
+                    report.AppendLine("OK: found " + form.Count + " hidden field(s) on Homepage.aspx.");
+                    report.AppendLine();
+
+                    report.AppendLine("Drift check -- control IDs the real check-in/out submission depends on:");
+                    AppendMarkerCheck(report, homePage.Content,
+                        "RadDockd3e9d57ac1744d8ba17c7c2a3354e5de", "check-in/out toolbar dock (__EVENTTARGET root)");
+                    AppendMarkerCheck(report, homePage.Content,
+                        "RadDock1a3205a5960143ae8c7577df63d948c8", "date/location toolbar dock");
+                    report.AppendLine();
+
+                    report.AppendLine("All hidden field names currently on Homepage.aspx:");
+                    foreach (var name in form.Keys)
+                    {
+                        report.AppendLine("  " + name);
+                    }
+                    report.AppendLine();
+                    report.AppendLine("No check-in/check-out action was submitted. No attendance record was created.");
+                    return report.ToString();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                report.AppendLine("FAILED: diagnostic was cancelled.");
+                return report.ToString();
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.Log("UOF diagnostic", ex);
+                report.AppendLine("FAILED: unexpected error: " + ex.Message);
+                return report.ToString();
+            }
+        }
+
+        private static void AppendMarkerCheck(StringBuilder report, string html, string marker, string label)
+        {
+            var found = html.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0;
+            report.AppendLine("  " + (found ? "OK" : "WARNING") + ": " + label +
+                " " + (found ? "found" : "NOT FOUND -- this control ID may have changed") + " (" + marker + ")");
         }
 
         private static HttpClientHandler CreateHandler()

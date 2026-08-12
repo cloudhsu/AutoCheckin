@@ -28,6 +28,7 @@ namespace AutoCheckIn
         private string m_statusMessage = string.Empty;
         private string m_checkInMessage = string.Empty;
         private string m_checkOutMessage = string.Empty;
+        private int m_consecutiveFailures;
 
         public DailyCheck(IUofClient uofClient)
         {
@@ -37,6 +38,7 @@ namespace AutoCheckIn
         public string StatusMessage { get { lock (m_stateLock) return m_statusMessage; } }
         public string CheckInMessage { get { lock (m_stateLock) return m_checkInMessage; } }
         public string CheckOutMessage { get { lock (m_stateLock) return m_checkOutMessage; } }
+        public int ConsecutiveFailures { get { lock (m_stateLock) return m_consecutiveFailures; } }
 
         public void SetWorkingDay(DayOfWeek day, bool isWorking)
         {
@@ -160,12 +162,12 @@ namespace AutoCheckIn
                     return;
                 }
 
-                if (!m_isCheckIn && now.Hour == 8 && now.Minute >= m_targetCheckIn && now >= m_nextCheckInAttempt)
+                if (CheckWindowPolicy.ShouldAttemptCheckIn(now, m_targetCheckIn, m_isCheckIn, m_nextCheckInAttempt))
                 {
                     pendingAction = CheckAction.CheckIn;
                     m_nextCheckInAttempt = now.Add(FailureRetryInterval);
                 }
-                else if (!m_isCheckOut && now.Hour == 18 && now.Minute >= m_targetCheckOut && now >= m_nextCheckOutAttempt)
+                else if (CheckWindowPolicy.ShouldAttemptCheckOut(now, m_targetCheckOut, m_isCheckOut, m_nextCheckOutAttempt))
                 {
                     pendingAction = CheckAction.CheckOut;
                     m_nextCheckOutAttempt = now.Add(FailureRetryInterval);
@@ -189,6 +191,11 @@ namespace AutoCheckIn
                 {
                     if (pendingAction == CheckAction.CheckIn) m_isCheckIn = true;
                     if (pendingAction == CheckAction.CheckOut) m_isCheckOut = true;
+                    m_consecutiveFailures = 0;
+                }
+                else
+                {
+                    m_consecutiveFailures++;
                 }
 
                 m_statusMessage = result.Message;
@@ -200,6 +207,7 @@ namespace AutoCheckIn
             m_today = now.Date;
             m_isCheckIn = false;
             m_isCheckOut = false;
+            m_consecutiveFailures = 0;
             m_targetCheckIn = m_random.Next(50, 59);
             m_targetCheckOut = m_random.Next(1, 10);
             m_nextCheckInAttempt = now.Date;

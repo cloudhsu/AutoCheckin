@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="CheckAction.cs" />
     <Compile Include="CheckResult.cs" />
+    <Compile Include="CheckWindowPolicy.cs" />
     <Compile Include="Credentials.cs" />
     <Compile Include="CredentialSavingUofClient.cs" />
     <Compile Include="CrackClient.cs" />
@@ -93,10 +94,12 @@
       <DependentUpon>newForm4.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="SelfTest.cs" />
     <Compile Include="TaskScheduleResult.cs" />
     <Compile Include="UiTheme.cs" />
     <Compile Include="UiDefaults.cs" />
     <Compile Include="WindowsStartupTaskService.cs" />
+    <Compile Include="WorkdaySettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

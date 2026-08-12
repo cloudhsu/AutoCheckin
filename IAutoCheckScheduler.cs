@@ -7,6 +7,7 @@ namespace AutoCheckIn
         string StatusMessage { get; }
         string CheckInMessage { get; }
         string CheckOutMessage { get; }
+        int ConsecutiveFailures { get; }
 
         void SetWorkingDay(DayOfWeek day, bool isWorking);
         void Start(string loginId, string password);

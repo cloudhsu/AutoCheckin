@@ -54,7 +54,7 @@
 - Produces: `HolidayCalendarResult TaiwanHolidayCsvParser.Parse(string csv, int expectedYear)`.
 - Produces: `HolidayCalendarResult.Available`, `HolidayCalendarResult.Holidays`, and `HolidayCalendarResult.Message`.
 
-- [ ] **Step 1: Add the failing parser tests and minimal test runner**
+- [x] **Step 1: Add the failing parser tests and minimal test runner**
 
 Create a console test runner whose `Main` executes named `Action` tests, prints `PASS <name>`, prints the exception for failures, and returns `1` if any test fails. Add these exact cases:
 
@@ -81,7 +81,7 @@ private static void ParserRejectsWrongYearAndMalformedFiles()
 
 The test project targets v4.7.2, outputs an executable, references `System`, `System.Core`, and the production project, and uses assembly name `AutoCheckIn.Tests`. Add `[assembly: InternalsVisibleTo("AutoCheckIn.Tests")]`.
 
-- [ ] **Step 2: Build to verify the parser tests fail**
+- [x] **Step 2: Build to verify the parser tests fail**
 
 Run:
 
@@ -91,7 +91,7 @@ Run:
 
 Expected: compilation fails because `TaiwanHolidayCsvParser` and `HolidayCalendarResult` do not exist.
 
-- [ ] **Step 3: Implement the result, interface, and strict parser**
+- [x] **Step 3: Implement the result, interface, and strict parser**
 
 Implement the contracts exactly:
 
@@ -122,7 +122,7 @@ internal interface ITaiwanHolidayProvider : IDisposable
 
 `Parse` must remove a UTF-8 BOM, require the four official headers, split records with `StringReader`, accept `yyyyMMdd` and `yyyy/M/d`, require every parsed record to match `expectedYear`, require 365 or 366 unique dates so truncated downloads cannot become valid cache files, and add only rows whose holiday field equals `2`. CSV fields may be quoted; implement a small quote-aware `ParseLine` that supports commas and doubled quotes.
 
-- [ ] **Step 4: Build and run the parser tests**
+- [x] **Step 4: Build and run the parser tests**
 
 Run the Debug rebuild command, then:
 
@@ -132,7 +132,7 @@ Run the Debug rebuild command, then:
 
 Expected: both parser cases print `PASS` and the process exits `0`.
 
-- [ ] **Step 5: Commit the parser boundary**
+- [x] **Step 5: Commit the parser boundary**
 
 ```powershell
 git add HolidayCalendarResult.cs ITaiwanHolidayProvider.cs TaiwanHolidayCsvParser.cs AutoCheckIn.Tests Properties/AssemblyInfo.cs AutoCheckIn.csproj AutoCheckIn.sln

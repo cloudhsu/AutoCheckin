@@ -10,6 +10,7 @@ namespace AutoCheckIn
         private static readonly TimeSpan FailureRetryInterval = TimeSpan.FromMinutes(5);
 
         private readonly IUofClient m_uofClient;
+        private readonly ITaiwanHolidayProvider m_holidayProvider;
         private readonly bool[] m_isWorkingDay = { false, true, true, true, true, true, false };
         private readonly Random m_random = new Random();
         private readonly object m_stateLock = new object();
@@ -17,6 +18,8 @@ namespace AutoCheckIn
         private CancellationTokenSource m_cancellation;
         private Task m_worker;
         private DateTime m_today;
+        private HolidayCalendarResult m_currentCalendar;
+        private int m_loadedCalendarYear = -1;
         private DateTime m_nextCheckInAttempt;
         private DateTime m_nextCheckOutAttempt;
         private int m_targetCheckIn;
@@ -30,9 +33,10 @@ namespace AutoCheckIn
         private string m_checkOutMessage = string.Empty;
         private int m_consecutiveFailures;
 
-        public DailyCheck(IUofClient uofClient)
+        public DailyCheck(IUofClient uofClient, ITaiwanHolidayProvider holidayProvider)
         {
             m_uofClient = uofClient ?? throw new ArgumentNullException(nameof(uofClient));
+            m_holidayProvider = holidayProvider ?? throw new ArgumentNullException(nameof(holidayProvider));
         }
 
         public string StatusMessage { get { lock (m_stateLock) return m_statusMessage; } }
@@ -110,6 +114,7 @@ namespace AutoCheckIn
         public void Dispose()
         {
             Stop();
+            m_holidayProvider.Dispose();
         }
 
         private async Task RunAsync(CancellationToken cancellationToken)
@@ -144,6 +149,8 @@ namespace AutoCheckIn
 
         private async Task CheckScheduleAsync(DateTime now, CancellationToken cancellationToken)
         {
+            await EnsureHolidayCalendarAsync(now, cancellationToken).ConfigureAwait(false);
+
             CheckAction? pendingAction = null;
             string loginId;
             string password;
@@ -159,6 +166,16 @@ namespace AutoCheckIn
                 if (!m_isWorkingDay[(int)now.DayOfWeek])
                 {
                     m_statusMessage = "Today is a day off.";
+                    return;
+                }
+
+                // The weekday check above already confirmed this weekday is
+                // selected; AutomaticWorkdayPolicy layers in the holiday check on
+                // top of that. Missing holiday data (calendar unavailable) falls
+                // back to the existing weekday-only behavior rather than blocking.
+                if (!AutomaticWorkdayPolicy.IsEligible(now.Date, true, m_currentCalendar))
+                {
+                    m_statusMessage = "Today is a Taiwan government holiday.";
                     return;
                 }
 
@@ -199,6 +216,40 @@ namespace AutoCheckIn
                 }
 
                 m_statusMessage = result.Message;
+            }
+        }
+
+        /// <summary>
+        /// Loads the holiday calendar for <paramref name="now"/>'s year, but only
+        /// when the year actually changes -- not on every 20-second poll, and not
+        /// on the daily InitializeDay reset. If the calendar comes back
+        /// unavailable, its fallback message is surfaced once here and persists
+        /// in StatusMessage until a day-off/holiday message or a real attendance
+        /// result replaces it.
+        /// </summary>
+        internal async Task EnsureHolidayCalendarAsync(DateTime now, CancellationToken cancellationToken)
+        {
+            int loadedYear;
+            lock (m_stateLock)
+            {
+                loadedYear = m_loadedCalendarYear;
+            }
+
+            if (now.Year == loadedYear)
+            {
+                return;
+            }
+
+            var calendar = await m_holidayProvider.GetCalendarAsync(now.Year, cancellationToken).ConfigureAwait(false);
+
+            lock (m_stateLock)
+            {
+                m_currentCalendar = calendar;
+                m_loadedCalendarYear = now.Year;
+                if (!calendar.Available)
+                {
+                    m_statusMessage = calendar.Message;
+                }
             }
         }
 

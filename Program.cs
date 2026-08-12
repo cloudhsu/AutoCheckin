@@ -46,9 +46,11 @@ namespace AutoCheckIn
                 .Skip(1)
                 .Any(argument => string.Equals(argument, "-a", StringComparison.OrdinalIgnoreCase));
             var credentialStore = new DpapiCredentialStore();
+            var holidayDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HolidayData");
+            var holidayProvider = OfficialTaiwanHolidayProvider.CreateDefault(holidayDirectory);
             Application.Run(new MainForm(
                 new CredentialSavingUofClient(new CrackClient(), credentialStore),
-                new DailyCheck(new CredentialSavingUofClient(new CrackClient(), credentialStore)),
+                new DailyCheck(new CredentialSavingUofClient(new CrackClient(), credentialStore), holidayProvider),
                 credentialStore,
                 new WindowsStartupTaskService(),
                 UiTheme.Blue,

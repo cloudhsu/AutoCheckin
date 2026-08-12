@@ -26,6 +26,8 @@ namespace AutoCheckIn.Tests
             Tuple.Create<string, Func<Task>>(nameof(ProviderUsesValidCacheWithoutNetworkAsync), ProviderUsesValidCacheWithoutNetworkAsync),
             Tuple.Create<string, Func<Task>>(nameof(ProviderDiscoversDownloadsAndCachesAsync), ProviderDiscoversDownloadsAndCachesAsync),
             Tuple.Create<string, Func<Task>>(nameof(ProviderFallsBackWhenUnavailableAsync), ProviderFallsBackWhenUnavailableAsync),
+            AsSyncTest(nameof(PolicyRespectsHolidaysAndFallback), PolicyRespectsHolidaysAndFallback),
+            Tuple.Create<string, Func<Task>>(nameof(SchedulerLoadsCalendarOncePerYearAsync), SchedulerLoadsCalendarOncePerYearAsync),
         };
 
         private static Tuple<string, Func<Task>> AsSyncTest(string name, Action action)
@@ -149,6 +151,59 @@ namespace AutoCheckIn.Tests
             finally
             {
                 Directory.Delete(testDirectory, true);
+            }
+        }
+
+        private static void PolicyRespectsHolidaysAndFallback()
+        {
+            var holiday = new DateTime(2026, 10, 9);
+            var available = new HolidayCalendarResult(true, new[] { holiday }, "loaded");
+            var unavailable = HolidayCalendarResult.Unavailable("fallback");
+
+            AssertFalse(AutomaticWorkdayPolicy.IsEligible(holiday, true, available), "selected holiday");
+            AssertTrue(AutomaticWorkdayPolicy.IsEligible(holiday.AddDays(1), true, available), "ordinary selected day");
+            AssertFalse(AutomaticWorkdayPolicy.IsEligible(holiday, false, unavailable), "unselected day");
+            AssertTrue(AutomaticWorkdayPolicy.IsEligible(holiday, true, unavailable), "weekday-only fallback");
+        }
+
+        private static async Task SchedulerLoadsCalendarOncePerYearAsync()
+        {
+            var provider = new RecordingHolidayProvider();
+            using (var dailyCheck = new DailyCheck(new NeverCalledUofClient(), provider))
+            {
+                await dailyCheck.EnsureHolidayCalendarAsync(new DateTime(2026, 3, 1), CancellationToken.None);
+                await dailyCheck.EnsureHolidayCalendarAsync(new DateTime(2026, 6, 1), CancellationToken.None);
+                await dailyCheck.EnsureHolidayCalendarAsync(new DateTime(2027, 1, 1), CancellationToken.None);
+            }
+
+            AssertEqual(2, provider.RequestedYears.Count, "expected exactly one provider call per distinct year");
+            AssertEqual(2026, provider.RequestedYears[0], "first requested year");
+            AssertEqual(2027, provider.RequestedYears[1], "second requested year");
+        }
+
+        private sealed class RecordingHolidayProvider : ITaiwanHolidayProvider
+        {
+            public readonly List<int> RequestedYears = new List<int>();
+
+            public Task<HolidayCalendarResult> GetCalendarAsync(
+                int year, CancellationToken cancellationToken = default(CancellationToken))
+            {
+                RequestedYears.Add(year);
+                return Task.FromResult(HolidayCalendarResult.Unavailable("test fallback"));
+            }
+
+            public void Dispose()
+            {
+            }
+        }
+
+        private sealed class NeverCalledUofClient : IUofClient
+        {
+            public Task<CheckResult> CheckAsync(
+                string loginId, string password, CheckAction action,
+                CancellationToken cancellationToken = default(CancellationToken))
+            {
+                throw new InvalidOperationException("UOF client should not be called in this test");
             }
         }
 

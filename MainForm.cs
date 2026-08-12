@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -29,7 +30,10 @@ namespace AutoCheckIn
         public MainForm()
             : this(
                 new CredentialSavingUofClient(new CrackClient(), new DpapiCredentialStore()),
-                new DailyCheck(new CredentialSavingUofClient(new CrackClient(), new DpapiCredentialStore())),
+                new DailyCheck(
+                    new CredentialSavingUofClient(new CrackClient(), new DpapiCredentialStore()),
+                    OfficialTaiwanHolidayProvider.CreateDefault(
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HolidayData"))),
                 new DpapiCredentialStore(),
                 new WindowsStartupTaskService(),
                 UiTheme.Blue,

@@ -54,6 +54,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutomaticWorkdayPolicy.cs" />
     <Compile Include="CheckAction.cs" />
     <Compile Include="CheckResult.cs" />
     <Compile Include="CheckWindowPolicy.cs" />

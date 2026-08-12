@@ -2,6 +2,11 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+// Lets the dependency-free test executable exercise internal types directly
+// (TaiwanHolidayCsvParser, ITaiwanHolidayProvider, AutomaticWorkdayPolicy, etc.)
+// without widening their real access modifier to public.
+[assembly: InternalsVisibleTo("AutoCheckIn.Tests")]
+
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.

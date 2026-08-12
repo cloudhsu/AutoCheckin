@@ -62,9 +62,11 @@
     <Compile Include="DailyCheck.cs" />
     <Compile Include="DpapiCredentialStore.cs" />
     <Compile Include="ErrorLogger.cs" />
+    <Compile Include="HolidayCalendarResult.cs" />
     <Compile Include="IAutoCheckScheduler.cs" />
     <Compile Include="ICredentialStore.cs" />
     <Compile Include="IStartupTaskService.cs" />
+    <Compile Include="ITaiwanHolidayProvider.cs" />
     <Compile Include="IUofClient.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -95,6 +97,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="SelfTest.cs" />
+    <Compile Include="TaiwanHolidayCsvParser.cs" />
     <Compile Include="TaskScheduleResult.cs" />
     <Compile Include="UiTheme.cs" />
     <Compile Include="UiDefaults.cs" />

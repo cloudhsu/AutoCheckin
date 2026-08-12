@@ -139,7 +139,7 @@ git add HolidayCalendarResult.cs ITaiwanHolidayProvider.cs TaiwanHolidayCsvParse
 git commit -m "Add Taiwan holiday calendar parser"
 ```
 
-### Task 2: Official discovery and annual file cache
+### Task 2: Official discovery and annual file cache [DONE, commit 4dbe891 — see note below]
 
 **Files:**
 - Create: `OfficialTaiwanHolidayProvider.cs`
@@ -151,7 +151,10 @@ git commit -m "Add Taiwan holiday calendar parser"
 - Produces: `OfficialTaiwanHolidayProvider(string cacheDirectory, Func<Uri, CancellationToken, Task<string>> downloadTextAsync)` for deterministic tests.
 - Produces: `OfficialTaiwanHolidayProvider.CreateDefault(string cacheDirectory)` for runtime use.
 
-- [ ] **Step 1: Add failing cache and discovery tests**
+> **Note (added after implementation):** the exact JSON shape of the data.gov.tw v2 dataset metadata endpoint (`result.distribution[]` with `resourceDescription`/`resourceFormat`/`resourceDownloadUrl`/`resourceCharacterEncoding` fields) was assumed from typical v2 REST dataset API conventions, not verified against a live response -- this session had no test credentials/network path confirmed against the real endpoint. All tests here use an injected fake matching this assumed shape, so they prove the *parsing/selection logic* is correct against that shape, not that the shape itself is correct. Verifying `OfficialTaiwanHolidayProvider.CreateDefault` against the real endpoint once is a required manual step before this ships.
+
+
+- [x] **Step 1: Add failing cache and discovery tests**
 
 Use a fresh directory below `Path.GetTempPath()` per test and delete that exact directory in `finally`. Add tests that prove:
 
@@ -173,13 +176,13 @@ private static async Task ProviderUsesValidCacheWithoutNetworkAsync()
 
 Also add `ProviderDiscoversDownloadsAndCachesAsync`: first fake response is metadata JSON containing distributions for a Google calendar and `115年中華民國政府行政機關辦公日曆表`; second response is `Valid2026Csv`. Assert two calls, the requested CSV URI, and creation of `holidays-2026.csv`. Add `ProviderFallsBackWhenUnavailableAsync`: throw `HttpRequestException`, assert `Available == false` and a non-empty fallback message.
 
-- [ ] **Step 2: Run tests to verify the provider cases fail**
+- [x] **Step 2: Run tests to verify the provider cases fail**
 
 Run the Debug rebuild and test executable.
 
 Expected: compilation fails because `OfficialTaiwanHolidayProvider` does not exist.
 
-- [ ] **Step 3: Implement official metadata discovery and cache**
+- [x] **Step 3: Implement official metadata discovery and cache**
 
 Use constants and selection rules:
 
@@ -197,13 +200,13 @@ The flow is: parse valid cache and return; otherwise download metadata; resolve 
 
 `CreateDefault` owns one `HttpClient` and supplies a delegate that calls `GetStringAsync` through a cancellation-aware `HttpRequestMessage`/`SendAsync` helper; implement `IDisposable` on the provider so the owned client is deterministically disposed while injected delegates are not.
 
-- [ ] **Step 4: Rebuild and run all provider tests**
+- [x] **Step 4: Rebuild and run all provider tests**
 
 Run the Debug rebuild and test executable.
 
 Expected: parser and all three provider cases print `PASS`; process exits `0`.
 
-- [ ] **Step 5: Commit official holiday caching**
+- [x] **Step 5: Commit official holiday caching**
 
 ```powershell
 git add OfficialTaiwanHolidayProvider.cs AutoCheckIn.Tests/Program.cs AutoCheckIn.csproj

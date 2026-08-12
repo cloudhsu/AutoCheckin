@@ -298,7 +298,7 @@ git commit -m "Skip automatic checks on Taiwan holidays"
 - Consumes: existing protected controls used by `MainForm`.
 - Produces: the same fixed layout at a 720 x 660 client size; no behavioral API changes.
 
-- [ ] **Step 1: Record the failing layout expectation**
+- [x] **Step 1: Record the failing layout expectation**
 
 Add a test that constructs `newForm1` on an STA thread and asserts:
 
@@ -307,13 +307,13 @@ AssertEqual(new Size(720, 660), form.ClientSize, "client size");
 AssertEqual(FormBorderStyle.FixedSingle, form.FormBorderStyle, "border style");
 ```
 
-- [ ] **Step 2: Run the test and verify the current 820 x 742 layout fails**
+- [x] **Step 2: Run the test and verify the current 820 x 742 layout fails**
 
 Run the Debug rebuild and test executable.
 
 Expected: the layout case fails with actual client size `820, 742`.
 
-- [ ] **Step 3: Apply the compact layout dimensions**
+- [x] **Step 3: Apply the compact layout dimensions**
 
 Change only designer layout properties. Use these bounding rectangles:
 
@@ -329,13 +329,13 @@ statusPanel    (30,586, 660,  46)
 
 Within panels, reduce horizontal dimensions while retaining at least 18 px internal margins: account text boxes become 275 px wide; quick-action buttons become 275 px wide; schedule auto button becomes 198 px wide and begins at x=438; startup status becomes 390 px wide; ADD/REMOVE buttons become 92 px wide at x=438 and x=544. Reduce large vertical gaps and button heights proportionally, keep labels readable, and preserve all names, tags, colors, text, docking, event wiring, and control order.
 
-- [ ] **Step 4: Rebuild Debug and run automated tests**
+- [x] **Step 4: Rebuild Debug and run automated tests**
 
 Run the Debug rebuild and test executable.
 
 Expected: all tests, including the exact 720 x 660 layout case, pass.
 
-- [ ] **Step 5: Rebuild Release**
+- [x] **Step 5: Rebuild Release**
 
 ```powershell
 & 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' AutoCheckIn.sln /t:Rebuild /p:Configuration=Release
@@ -343,18 +343,18 @@ Expected: all tests, including the exact 720 x 660 layout case, pass.
 
 Expected: `Build succeeded`, with zero errors.
 
-- [ ] **Step 6: Perform focused manual checks**
+- [x] **Step 6: Perform focused manual checks**
 
 Run `bin\Debug\AutoCheckIn.exe` and verify the complete UI fits without clipping at 100% Windows scaling. Start automatic mode with a fake or non-production-safe test boundary only; confirm status distinguishes a holiday, an ordinary selected weekday, and unavailable holiday data. Run with `-a`, minimize/restore through the tray, reload encrypted credentials, and exercise Task Scheduler ADD/UPDATE/REMOVE without changing their existing behavior. Never commit `credentials.dat` or generated `HolidayData` files.
 
-- [ ] **Step 7: Commit the compact GUI**
+- [x] **Step 7: Commit the compact GUI**
 
 ```powershell
 git add newForm1.Designer.cs AutoCheckIn.Tests/Program.cs
 git commit -m "Compact the main window layout"
 ```
 
-- [ ] **Step 8: Inspect final repository state**
+- [x] **Step 8: Inspect final repository state**
 
 ```powershell
 git status --short

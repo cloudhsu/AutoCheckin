@@ -28,6 +28,7 @@ namespace AutoCheckIn.Tests
             Tuple.Create<string, Func<Task>>(nameof(ProviderFallsBackWhenUnavailableAsync), ProviderFallsBackWhenUnavailableAsync),
             AsSyncTest(nameof(PolicyRespectsHolidaysAndFallback), PolicyRespectsHolidaysAndFallback),
             Tuple.Create<string, Func<Task>>(nameof(SchedulerLoadsCalendarOncePerYearAsync), SchedulerLoadsCalendarOncePerYearAsync),
+            AsSyncTest(nameof(MainWindowIsCompact720x660), MainWindowIsCompact720x660),
         };
 
         private static Tuple<string, Func<Task>> AsSyncTest(string name, Action action)
@@ -151,6 +152,15 @@ namespace AutoCheckIn.Tests
             finally
             {
                 Directory.Delete(testDirectory, true);
+            }
+        }
+
+        private static void MainWindowIsCompact720x660()
+        {
+            using (var form = new AutoCheckIn.newForm1())
+            {
+                AssertEqual(new System.Drawing.Size(720, 660), form.ClientSize, "client size");
+                AssertEqual(System.Windows.Forms.FormBorderStyle.FixedSingle, form.FormBorderStyle, "border style");
             }
         }
 

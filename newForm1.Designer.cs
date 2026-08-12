@@ -90,18 +90,18 @@ namespace AutoCheckIn
             this.headerPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.headerPanel.Location = new System.Drawing.Point(0, 0);
             this.headerPanel.Name = "headerPanel";
-            this.headerPanel.Size = new System.Drawing.Size(820, 105);
+            this.headerPanel.Size = new System.Drawing.Size(720, 92);
             // titleLabel
             this.titleLabel.AutoSize = true;
             this.titleLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 22F);
             this.titleLabel.ForeColor = System.Drawing.Color.FromArgb(236, 245, 244);
-            this.titleLabel.Location = new System.Drawing.Point(34, 20);
+            this.titleLabel.Location = new System.Drawing.Point(30, 17);
             this.titleLabel.Text = "Auto Check-In";
             // subtitleLabel
             this.subtitleLabel.AutoSize = true;
             this.subtitleLabel.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             this.subtitleLabel.ForeColor = System.Drawing.Color.FromArgb(142, 169, 170);
-            this.subtitleLabel.Location = new System.Drawing.Point(38, 68);
+            this.subtitleLabel.Location = new System.Drawing.Point(34, 58);
             this.subtitleLabel.Text = "UOF attendance assistant  •  Secure workstation session";
             // accountPanel
             this.accountPanel.BackColor = System.Drawing.Color.FromArgb(43, 58, 66);
@@ -110,18 +110,18 @@ namespace AutoCheckIn
             this.accountPanel.Controls.Add(this.idTextBox);
             this.accountPanel.Controls.Add(this.passwordLabel);
             this.accountPanel.Controls.Add(this.passwordTextBox);
-            this.accountPanel.Location = new System.Drawing.Point(34, 130);
-            this.accountPanel.Size = new System.Drawing.Size(365, 205);
+            this.accountPanel.Location = new System.Drawing.Point(30, 112);
+            this.accountPanel.Size = new System.Drawing.Size(321, 182);
             // accountTitle
             this.accountTitle.AutoSize = true;
             this.accountTitle.Font = new System.Drawing.Font("Segoe UI Semibold", 12F);
             this.accountTitle.ForeColor = System.Drawing.Color.White;
-            this.accountTitle.Location = new System.Drawing.Point(22, 18);
+            this.accountTitle.Location = new System.Drawing.Point(22, 15);
             this.accountTitle.Text = "ACCOUNT";
             // idLabel
             this.idLabel.AutoSize = true;
             this.idLabel.ForeColor = System.Drawing.Color.FromArgb(181, 199, 200);
-            this.idLabel.Location = new System.Drawing.Point(23, 61);
+            this.idLabel.Location = new System.Drawing.Point(20, 53);
             this.idLabel.Text = "Employee ID";
             // idTextBox
             this.idTextBox.BackColor = System.Drawing.Color.FromArgb(31, 45, 53);
@@ -129,33 +129,33 @@ namespace AutoCheckIn
             this.idTextBox.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
             this.idTextBox.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.idTextBox.ForeColor = System.Drawing.Color.White;
-            this.idTextBox.Location = new System.Drawing.Point(26, 84);
-            this.idTextBox.Size = new System.Drawing.Size(313, 32);
+            this.idTextBox.Location = new System.Drawing.Point(26, 73);
+            this.idTextBox.Size = new System.Drawing.Size(275, 29);
             // passwordLabel
             this.passwordLabel.AutoSize = true;
             this.passwordLabel.ForeColor = System.Drawing.Color.FromArgb(181, 199, 200);
-            this.passwordLabel.Location = new System.Drawing.Point(23, 128);
+            this.passwordLabel.Location = new System.Drawing.Point(20, 111);
             this.passwordLabel.Text = "Password";
             // passwordTextBox
             this.passwordTextBox.BackColor = System.Drawing.Color.FromArgb(31, 45, 53);
             this.passwordTextBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.passwordTextBox.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.passwordTextBox.ForeColor = System.Drawing.Color.White;
-            this.passwordTextBox.Location = new System.Drawing.Point(26, 151);
+            this.passwordTextBox.Location = new System.Drawing.Point(26, 132);
             this.passwordTextBox.PasswordChar = '●';
-            this.passwordTextBox.Size = new System.Drawing.Size(313, 32);
+            this.passwordTextBox.Size = new System.Drawing.Size(275, 29);
             // manualPanel
             this.manualPanel.BackColor = System.Drawing.Color.FromArgb(43, 58, 66);
             this.manualPanel.Controls.Add(this.manualTitle);
             this.manualPanel.Controls.Add(this.checkInButton);
             this.manualPanel.Controls.Add(this.checkOutButton);
-            this.manualPanel.Location = new System.Drawing.Point(421, 130);
-            this.manualPanel.Size = new System.Drawing.Size(365, 205);
+            this.manualPanel.Location = new System.Drawing.Point(369, 112);
+            this.manualPanel.Size = new System.Drawing.Size(321, 182);
             // manualTitle
             this.manualTitle.AutoSize = true;
             this.manualTitle.Font = new System.Drawing.Font("Segoe UI Semibold", 12F);
             this.manualTitle.ForeColor = System.Drawing.Color.White;
-            this.manualTitle.Location = new System.Drawing.Point(22, 18);
+            this.manualTitle.Location = new System.Drawing.Point(22, 15);
             this.manualTitle.Text = "QUICK ACTION";
             // checkInButton
             this.checkInButton.BackColor = System.Drawing.Color.FromArgb(38, 166, 154);
@@ -163,8 +163,8 @@ namespace AutoCheckIn
             this.checkInButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.checkInButton.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
             this.checkInButton.ForeColor = System.Drawing.Color.White;
-            this.checkInButton.Location = new System.Drawing.Point(26, 65);
-            this.checkInButton.Size = new System.Drawing.Size(313, 49);
+            this.checkInButton.Location = new System.Drawing.Point(26, 57);
+            this.checkInButton.Size = new System.Drawing.Size(275, 43);
             this.checkInButton.Text = "CHECK IN";
             this.checkInButton.UseVisualStyleBackColor = false;
             // checkOutButton
@@ -173,8 +173,8 @@ namespace AutoCheckIn
             this.checkOutButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.checkOutButton.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
             this.checkOutButton.ForeColor = System.Drawing.Color.FromArgb(218, 232, 232);
-            this.checkOutButton.Location = new System.Drawing.Point(26, 128);
-            this.checkOutButton.Size = new System.Drawing.Size(313, 49);
+            this.checkOutButton.Location = new System.Drawing.Point(26, 112);
+            this.checkOutButton.Size = new System.Drawing.Size(275, 43);
             this.checkOutButton.Text = "CHECK OUT";
             this.checkOutButton.UseVisualStyleBackColor = false;
             // schedulePanel
@@ -189,25 +189,25 @@ namespace AutoCheckIn
             this.schedulePanel.Controls.Add(this.checkInTimeLabel);
             this.schedulePanel.Controls.Add(this.checkOutTimeLabel);
             this.schedulePanel.Controls.Add(this.autoCheckButton);
-            this.schedulePanel.Location = new System.Drawing.Point(34, 355);
-            this.schedulePanel.Size = new System.Drawing.Size(752, 185);
+            this.schedulePanel.Location = new System.Drawing.Point(30, 310);
+            this.schedulePanel.Size = new System.Drawing.Size(660, 164);
             // scheduleTitle
             this.scheduleTitle.AutoSize = true;
             this.scheduleTitle.Font = new System.Drawing.Font("Segoe UI Semibold", 12F);
             this.scheduleTitle.ForeColor = System.Drawing.Color.White;
-            this.scheduleTitle.Location = new System.Drawing.Point(22, 17);
+            this.scheduleTitle.Location = new System.Drawing.Point(22, 15);
             this.scheduleTitle.Text = "AUTOMATION SCHEDULE";
             // workingDaysLabel
             this.workingDaysLabel.AutoSize = true;
             this.workingDaysLabel.ForeColor = System.Drawing.Color.FromArgb(181, 199, 200);
-            this.workingDaysLabel.Location = new System.Drawing.Point(23, 57);
+            this.workingDaysLabel.Location = new System.Drawing.Point(20, 50);
             this.workingDaysLabel.Text = "Working days";
             // weekday checkboxes
-            this.monCheckBox.Location = new System.Drawing.Point(26, 84); this.monCheckBox.Tag = "1"; this.monCheckBox.Text = "Mon";
-            this.tueCheckBox.Location = new System.Drawing.Point(91, 84); this.tueCheckBox.Tag = "2"; this.tueCheckBox.Text = "Tue";
-            this.wedCheckBox.Location = new System.Drawing.Point(156, 84); this.wedCheckBox.Tag = "3"; this.wedCheckBox.Text = "Wed";
-            this.thuCheckBox.Location = new System.Drawing.Point(226, 84); this.thuCheckBox.Tag = "4"; this.thuCheckBox.Text = "Thu";
-            this.friCheckBox.Location = new System.Drawing.Point(291, 84); this.friCheckBox.Tag = "5"; this.friCheckBox.Text = "Fri";
+            this.monCheckBox.Location = new System.Drawing.Point(26, 74); this.monCheckBox.Tag = "1"; this.monCheckBox.Text = "Mon";
+            this.tueCheckBox.Location = new System.Drawing.Point(91, 74); this.tueCheckBox.Tag = "2"; this.tueCheckBox.Text = "Tue";
+            this.wedCheckBox.Location = new System.Drawing.Point(156, 74); this.wedCheckBox.Tag = "3"; this.wedCheckBox.Text = "Wed";
+            this.thuCheckBox.Location = new System.Drawing.Point(226, 74); this.thuCheckBox.Tag = "4"; this.thuCheckBox.Text = "Thu";
+            this.friCheckBox.Location = new System.Drawing.Point(291, 74); this.friCheckBox.Tag = "5"; this.friCheckBox.Text = "Fri";
             this.monCheckBox.AutoSize = true; this.monCheckBox.Checked = true; this.monCheckBox.ForeColor = System.Drawing.Color.FromArgb(218, 232, 232);
             this.tueCheckBox.AutoSize = true; this.tueCheckBox.Checked = true; this.tueCheckBox.ForeColor = System.Drawing.Color.FromArgb(218, 232, 232);
             this.wedCheckBox.AutoSize = true; this.wedCheckBox.Checked = true; this.wedCheckBox.ForeColor = System.Drawing.Color.FromArgb(218, 232, 232);
@@ -216,11 +216,11 @@ namespace AutoCheckIn
             // time labels
             this.checkInTimeLabel.AutoSize = true;
             this.checkInTimeLabel.ForeColor = System.Drawing.Color.FromArgb(112, 205, 195);
-            this.checkInTimeLabel.Location = new System.Drawing.Point(23, 132);
+            this.checkInTimeLabel.Location = new System.Drawing.Point(20, 116);
             this.checkInTimeLabel.Text = "IN  08:50–08:58";
             this.checkOutTimeLabel.AutoSize = true;
             this.checkOutTimeLabel.ForeColor = System.Drawing.Color.FromArgb(112, 205, 195);
-            this.checkOutTimeLabel.Location = new System.Drawing.Point(170, 132);
+            this.checkOutTimeLabel.Location = new System.Drawing.Point(170, 116);
             this.checkOutTimeLabel.Text = "OUT  18:01–18:09";
             // autoCheckButton
             this.autoCheckButton.BackColor = System.Drawing.Color.FromArgb(38, 166, 154);
@@ -228,8 +228,8 @@ namespace AutoCheckIn
             this.autoCheckButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.autoCheckButton.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
             this.autoCheckButton.ForeColor = System.Drawing.Color.White;
-            this.autoCheckButton.Location = new System.Drawing.Point(494, 67);
-            this.autoCheckButton.Size = new System.Drawing.Size(226, 66);
+            this.autoCheckButton.Location = new System.Drawing.Point(438, 58);
+            this.autoCheckButton.Size = new System.Drawing.Size(198, 58);
             this.autoCheckButton.Text = "START AUTO CHECK";
             this.autoCheckButton.UseVisualStyleBackColor = false;
             // startupPanel
@@ -238,55 +238,55 @@ namespace AutoCheckIn
             this.startupPanel.Controls.Add(this.startupStatusLabel);
             this.startupPanel.Controls.Add(this.createStartupButton);
             this.startupPanel.Controls.Add(this.deleteStartupButton);
-            this.startupPanel.Location = new System.Drawing.Point(34, 558);
-            this.startupPanel.Size = new System.Drawing.Size(752, 90);
+            this.startupPanel.Location = new System.Drawing.Point(30, 490);
+            this.startupPanel.Size = new System.Drawing.Size(660, 80);
             this.startupTitleLabel.AutoSize = true;
             this.startupTitleLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
             this.startupTitleLabel.ForeColor = System.Drawing.Color.White;
-            this.startupTitleLabel.Location = new System.Drawing.Point(22, 14);
+            this.startupTitleLabel.Location = new System.Drawing.Point(22, 12);
             this.startupTitleLabel.Text = "WINDOWS STARTUP";
             this.startupStatusLabel.AutoEllipsis = true;
             this.startupStatusLabel.AutoSize = false;
             this.startupStatusLabel.ForeColor = System.Drawing.Color.FromArgb(181, 199, 200);
-            this.startupStatusLabel.Location = new System.Drawing.Point(23, 51);
-            this.startupStatusLabel.Size = new System.Drawing.Size(450, 25);
+            this.startupStatusLabel.Location = new System.Drawing.Point(20, 44);
+            this.startupStatusLabel.Size = new System.Drawing.Size(390, 22);
             this.startupStatusLabel.Text = "Checking Task Scheduler...";
             this.createStartupButton.BackColor = System.Drawing.Color.FromArgb(38, 166, 154);
             this.createStartupButton.FlatAppearance.BorderSize = 0;
             this.createStartupButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.createStartupButton.ForeColor = System.Drawing.Color.White;
-            this.createStartupButton.Location = new System.Drawing.Point(494, 20);
-            this.createStartupButton.Size = new System.Drawing.Size(105, 48);
+            this.createStartupButton.Location = new System.Drawing.Point(438, 18);
+            this.createStartupButton.Size = new System.Drawing.Size(92, 43);
             this.createStartupButton.Text = "ADD";
             this.createStartupButton.UseVisualStyleBackColor = false;
             this.deleteStartupButton.BackColor = System.Drawing.Color.FromArgb(55, 72, 80);
             this.deleteStartupButton.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(78, 104, 109);
             this.deleteStartupButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.deleteStartupButton.ForeColor = System.Drawing.Color.White;
-            this.deleteStartupButton.Location = new System.Drawing.Point(615, 20);
-            this.deleteStartupButton.Size = new System.Drawing.Size(105, 48);
+            this.deleteStartupButton.Location = new System.Drawing.Point(544, 18);
+            this.deleteStartupButton.Size = new System.Drawing.Size(92, 43);
             this.deleteStartupButton.Text = "REMOVE";
             this.deleteStartupButton.UseVisualStyleBackColor = false;
             // statusPanel
             this.statusPanel.BackColor = System.Drawing.Color.FromArgb(31, 45, 53);
             this.statusPanel.Controls.Add(this.statusDot);
             this.statusPanel.Controls.Add(this.statusLabel);
-            this.statusPanel.Location = new System.Drawing.Point(34, 664);
-            this.statusPanel.Size = new System.Drawing.Size(752, 52);
+            this.statusPanel.Location = new System.Drawing.Point(30, 586);
+            this.statusPanel.Size = new System.Drawing.Size(660, 46);
             this.statusDot.AutoSize = true;
             this.statusDot.Font = new System.Drawing.Font("Segoe UI", 12F);
             this.statusDot.ForeColor = System.Drawing.Color.FromArgb(38, 166, 154);
-            this.statusDot.Location = new System.Drawing.Point(19, 12);
+            this.statusDot.Location = new System.Drawing.Point(17, 10);
             this.statusDot.Text = "●";
             this.statusLabel.AutoSize = true;
             this.statusLabel.ForeColor = System.Drawing.Color.FromArgb(181, 199, 200);
-            this.statusLabel.Location = new System.Drawing.Point(50, 17);
+            this.statusLabel.Location = new System.Drawing.Point(44, 15);
             this.statusLabel.Text = "Ready  •  Waiting for automatic check schedule";
             // newForm1
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(35, 48, 56);
-            this.ClientSize = new System.Drawing.Size(820, 742);
+            this.ClientSize = new System.Drawing.Size(720, 660);
             this.Controls.Add(this.startupPanel);
             this.Controls.Add(this.statusPanel);
             this.Controls.Add(this.schedulePanel);

@@ -9,11 +9,27 @@ namespace AutoCheckIn
     /// worker loop.
     /// </summary>
     /// <remarks>
-    /// Original behavior required <c>now.Hour == 8</c> (or 18) exactly, so a
-    /// machine that was asleep or only booted after the top of that hour would
-    /// silently and permanently miss the day's attempt. This policy keeps the
-    /// same randomized target-minute trigger but widens eligibility so a late
-    /// attempt still fires rather than being lost for the rest of the day.
+    /// <para>
+    /// Superseded by commit 5f5562f. Before this class existed, the eligibility
+    /// check was inline in DailyCheck.CheckScheduleAsync, verbatim:
+    /// </para>
+    /// <code>
+    /// if (!m_isCheckIn &amp;&amp; now.Hour == 8 &amp;&amp; now.Minute >= m_targetCheckIn &amp;&amp; now >= m_nextCheckInAttempt)
+    /// else if (!m_isCheckOut &amp;&amp; now.Hour == 18 &amp;&amp; now.Minute >= m_targetCheckOut &amp;&amp; now >= m_nextCheckOutAttempt)
+    /// </code>
+    /// <para>
+    /// That required <c>now.Hour == 8</c> (or 18) exactly, so a machine that was
+    /// asleep or only booted after the top of that hour would silently and
+    /// permanently miss the day's attempt -- there was no way for that condition
+    /// to become true again once the hour changed. This policy keeps the same
+    /// randomized target-minute trigger but widens eligibility (via
+    /// <see cref="CheckInWindowEnd"/>/<see cref="CheckOutWindowEnd"/>) so a late
+    /// attempt still fires rather than being lost for the rest of the day. This
+    /// record exists because no automated test captured the original condition
+    /// before it was replaced -- see SelfTest.CheckIn_LateAfterOriginalHour_StillFiresBeforeCheckOutWindow
+    /// and CheckOut_LateInEvening_StillFiresBeforeMidnight for the executable
+    /// regression coverage of the divergence this introduced.
+    /// </para>
     /// </remarks>
     internal static class CheckWindowPolicy
     {

@@ -1,35 +1,51 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AutoCheckIn.Tests
 {
     /// <summary>
     /// Dependency-free regression test runner for AutoCheckIn. Each test is a
-    /// named zero-argument Action; Main runs them all, prints PASS/FAIL per
+    /// named case (sync or async); Main runs them all, prints PASS/FAIL per
     /// case, and returns a non-zero exit code if any failed.
     /// </summary>
     internal static class Program
     {
         internal static readonly string Valid2026Csv = BuildCalendarCsv(2026);
 
+        private static readonly List<Tuple<string, Func<Task>>> Tests = new List<Tuple<string, Func<Task>>>
+        {
+            AsSyncTest(nameof(ParserReadsOnlyFlagTwoDates), ParserReadsOnlyFlagTwoDates),
+            AsSyncTest(nameof(ParserRejectsWrongYearAndMalformedFiles), ParserRejectsWrongYearAndMalformedFiles),
+            Tuple.Create<string, Func<Task>>(nameof(ProviderUsesValidCacheWithoutNetworkAsync), ProviderUsesValidCacheWithoutNetworkAsync),
+            Tuple.Create<string, Func<Task>>(nameof(ProviderDiscoversDownloadsAndCachesAsync), ProviderDiscoversDownloadsAndCachesAsync),
+            Tuple.Create<string, Func<Task>>(nameof(ProviderFallsBackWhenUnavailableAsync), ProviderFallsBackWhenUnavailableAsync),
+        };
+
+        private static Tuple<string, Func<Task>> AsSyncTest(string name, Action action)
+        {
+            return Tuple.Create<string, Func<Task>>(name, () =>
+            {
+                action();
+                return Task.CompletedTask;
+            });
+        }
+
         [STAThread]
         static int Main()
         {
-            var tests = new List<Tuple<string, Action>>
-            {
-                Tuple.Create<string, Action>(nameof(ParserReadsOnlyFlagTwoDates), ParserReadsOnlyFlagTwoDates),
-                Tuple.Create<string, Action>(nameof(ParserRejectsWrongYearAndMalformedFiles), ParserRejectsWrongYearAndMalformedFiles),
-            };
-
             var failures = 0;
-            foreach (var test in tests)
+            foreach (var test in Tests)
             {
                 try
                 {
-                    test.Item2();
+                    test.Item2().GetAwaiter().GetResult();
                     Console.WriteLine("PASS " + test.Item1);
                 }
                 catch (Exception ex)
@@ -61,6 +77,109 @@ namespace AutoCheckIn.Tests
                 TaiwanHolidayCsvParser.Parse(BuildCalendarCsv(2025), 2026));
             AssertThrows<FormatException>(() =>
                 TaiwanHolidayCsvParser.Parse("wrong,headers\r\nvalue,value\r\n", 2026));
+        }
+
+        private static async Task ProviderUsesValidCacheWithoutNetworkAsync()
+        {
+            var testDirectory = CreateTempDirectory();
+            try
+            {
+                File.WriteAllText(Path.Combine(testDirectory, "holidays-2026.csv"), Valid2026Csv, Encoding.UTF8);
+                var calls = 0;
+                var provider = new OfficialTaiwanHolidayProvider(testDirectory, (uri, token) =>
+                {
+                    calls++;
+                    throw new InvalidOperationException("network should not be called");
+                });
+                var result = await provider.GetCalendarAsync(2026, CancellationToken.None);
+                AssertTrue(result.Available, "cache should load");
+                AssertEqual(0, calls, "network call count");
+            }
+            finally
+            {
+                Directory.Delete(testDirectory, true);
+            }
+        }
+
+        private static async Task ProviderDiscoversDownloadsAndCachesAsync()
+        {
+            var testDirectory = CreateTempDirectory();
+            try
+            {
+                const string csvUrl = "https://data.gov.tw/fake/holidays-115.csv";
+                var metadataJson = BuildMetadataJson(2026, csvUrl, "UTF-8");
+                var calls = new List<Uri>();
+
+                var provider = new OfficialTaiwanHolidayProvider(testDirectory, (uri, token) =>
+                {
+                    calls.Add(uri);
+                    return Task.FromResult(calls.Count == 1 ? metadataJson : Valid2026Csv);
+                });
+
+                var result = await provider.GetCalendarAsync(2026, CancellationToken.None);
+
+                AssertTrue(result.Available, "download should succeed");
+                AssertEqual(2, calls.Count, "expected exactly two network calls (metadata, then CSV)");
+                AssertEqual(csvUrl, calls[1].ToString(), "second call should fetch the resolved CSV URI");
+                AssertTrue(
+                    File.Exists(Path.Combine(testDirectory, "holidays-2026.csv")),
+                    "cache file should be created after a successful download");
+            }
+            finally
+            {
+                Directory.Delete(testDirectory, true);
+            }
+        }
+
+        private static async Task ProviderFallsBackWhenUnavailableAsync()
+        {
+            var testDirectory = CreateTempDirectory();
+            try
+            {
+                var provider = new OfficialTaiwanHolidayProvider(testDirectory, (uri, token) =>
+                {
+                    throw new HttpRequestException("simulated network failure");
+                });
+
+                var result = await provider.GetCalendarAsync(2026, CancellationToken.None);
+
+                AssertFalse(result.Available, "should fall back when the network is unavailable");
+                AssertFalse(string.IsNullOrEmpty(result.Message), "fallback message should be present");
+            }
+            finally
+            {
+                Directory.Delete(testDirectory, true);
+            }
+        }
+
+        /// <summary>
+        /// Builds a fixture matching the data.gov.tw v2 dataset metadata shape:
+        /// a "result.distribution" array of resource entries, each with
+        /// resourceDescription/resourceFormat/resourceDownloadUrl (and optionally
+        /// resourceCharacterEncoding). Includes a Google-calendar (.ics) distractor
+        /// entry alongside the real CSV entry, matching the real dataset's shape.
+        /// </summary>
+        private static string BuildMetadataJson(int year, string csvUrl, string csvEncoding)
+        {
+            var rocYear = (year - 1911).ToString(CultureInfo.InvariantCulture);
+            var description = rocYear + "年中華民國政府行政機關辦公日曆表";
+
+            return "{\"result\":{\"distribution\":[" +
+                "{\"resourceDescription\":\"" + description + "(Google日曆)\"," +
+                "\"resourceFormat\":\"ICS\"," +
+                "\"resourceDownloadUrl\":\"https://data.gov.tw/fake/holidays-" + rocYear + ".ics\"}," +
+                "{\"resourceDescription\":\"" + description + "\"," +
+                "\"resourceFormat\":\"CSV\"," +
+                "\"resourceDownloadUrl\":\"" + csvUrl + "\"," +
+                "\"resourceCharacterEncoding\":\"" + csvEncoding + "\"}" +
+                "]}}";
+        }
+
+        private static string CreateTempDirectory()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "AutoCheckInTests_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(path);
+            return path;
         }
 
         /// <summary>

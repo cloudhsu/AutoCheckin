@@ -49,6 +49,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Security" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -95,6 +96,7 @@
     <Compile Include="newForm4.Designer.cs">
       <DependentUpon>newForm4.cs</DependentUpon>
     </Compile>
+    <Compile Include="OfficialTaiwanHolidayProvider.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SelfTest.cs" />
     <Compile Include="TaiwanHolidayCsvParser.cs" />
